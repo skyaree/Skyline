@@ -1,4 +1,7 @@
 """Loads and registers modules"""
+
+
+
 import ast
 import asyncio
 import contextlib
@@ -18,33 +21,46 @@ import uuid
 from collections import ChainMap
 from importlib.machinery import ModuleSpec
 from urllib.parse import urlparse
+
 import requests
 from skylinetl.errors.common import ScamDetectionError
 from skylinetl.errors.rpcerrorlist import MediaCaptionTooLongError
 from skylinetl.tl.functions.channels import JoinChannelRequest
 from skylinetl.tl.types import Channel, Message
+
 from .. import loader, main, utils
 from .._local_storage import RemoteStorage
 from ..compat import geek
 from ..inline.types import InlineCall
 from ..types import CoreOverwriteError, CoreUnloadError
+
 logger = logging.getLogger(__name__)
+
+
 class FakeOne:
     def __eq__(self, other):
         return other == -1 or isinstance(other, FakeOne)
+
     def __bool__(self):
         return False
+
+
 MODULE_LOADING_FORBIDDEN = FakeOne()
 MODULE_LOADING_FAILED = 0
 MODULE_LOADING_SUCCESS = 1
+
+
 @loader.tds
 class LoaderMod(loader.Module):
     """Loads modules"""
+
     strings = {"name": "Loader"}
+
     def __init__(self):
         self.fully_loaded = False
         self._links_cache = {}
         self._storage: RemoteStorage = None
+
         self.config = loader.ModuleConfig(
             loader.ConfigValue(
                 "MODULES_REPO",
@@ -77,6 +93,7 @@ class LoaderMod(loader.Module):
                 lambda: "Emoji for command",
             ),
         )
+
     async def _async_init(self):
         modules = list(
             filter(
@@ -93,14 +110,20 @@ class LoaderMod(loader.Module):
         )
         logger.debug("Modules: %s", modules)
         asyncio.ensure_future(self._storage.preload(modules))
+
     async def client_ready(self):
         while not (settings := self.lookup("settings")):
             await asyncio.sleep(0.5)
+
         self._storage = RemoteStorage(self._client)
+
         self.allmodules.add_aliases(settings.get("aliases", {}))
+
         main.skyline.ready.set()
+
         asyncio.ensure_future(self._update_modules())
         asyncio.ensure_future(self._async_init())
+
     @loader.loop(interval=3, wait_before=True, autostart=True)
     async def _config_autosaver(self):
         for mod in self.allmodules.modules:
@@ -110,11 +133,14 @@ class LoaderMod(loader.Module):
                 or not isinstance(mod.config, loader.ModuleConfig)
             ):
                 continue
+
             for option, config in mod.config._config.items():
                 if not hasattr(config, "_save_marker"):
                     continue
+
                 delattr(mod.config._config[option], "_save_marker")
                 mod.pointer("__config__", {})[option] = config.value
+
         for lib in self.allmodules.libraries:
             if (
                 not hasattr(lib, "config")
@@ -122,15 +148,20 @@ class LoaderMod(loader.Module):
                 or not isinstance(lib.config, loader.ModuleConfig)
             ):
                 continue
+
             for option, config in lib.config._config.items():
                 if not hasattr(config, "_save_marker"):
                     continue
+
                 delattr(lib.config._config[option], "_save_marker")
                 lib._lib_pointer("__config__", {})[option] = config.value
+
         self._db.save()
+
     def update_modules_in_db(self):
         if self.allmodules.secure_boot:
             return
+
         self.set(
             "loaded_modules",
             {
@@ -141,11 +172,13 @@ class LoaderMod(loader.Module):
                 },
             },
         )
+
     @loader.command(alias = "dlm")
     async def dlmod(self, message: Message, force_pm: bool = False):
         if args := utils.get_args(message):
             if len(args) == 1:
                 args = args[0]
+
                 await utils.answer(
                     message, self.strings("finding_module_in_repos")
                 )
@@ -154,15 +187,19 @@ class LoaderMod(loader.Module):
                     == MODULE_LOADING_FORBIDDEN
                 ):
                     return
+
                 if self.fully_loaded:
                     self.update_modules_in_db()
             else:
                 not_installed = []
+
                 await utils.answer(
                     message, "Installing {} modules...".format(len(args))
                 )
+
                 for arg in args:
                     result = await self.download_and_install(arg)
+                    
                     if result == MODULE_LOADING_FAILED:
                         not_installed.append(arg)
                 await utils.answer(
@@ -171,6 +208,7 @@ class LoaderMod(loader.Module):
                         "</code>, <code>".join(not_installed)
                     )
                 )
+
                 if self.fully_loaded:
                     self.update_modules_in_db()
         else:
@@ -201,14 +239,18 @@ class LoaderMod(loader.Module):
                     for repo, mods in (await self.get_repo_list()).items()
                 ],
             )
+
     async def _get_modules_to_load(self):
         todo = self.get("loaded_modules", {})
         logger.debug("Loading modules: %s", todo)
         return todo
+
     async def _get_repo(self, repo: str) -> str:
         repo = repo.strip("/")
+
         if self._links_cache.get(repo, {}).get("exp", 0) >= time.time():
             return self._links_cache[repo]["data"]
+
         res = await utils.run_sync(
             requests.get,
             f"{repo}/full.txt",
@@ -218,6 +260,7 @@ class LoaderMod(loader.Module):
                 else None
             ),
         )
+
         if not str(res.status_code).startswith("2"):
             logger.debug(
                 "Can't load repo %s contents because of %s status code",
@@ -225,11 +268,14 @@ class LoaderMod(loader.Module):
                 res.status_code,
             )
             return []
+
         self._links_cache[repo] = {
             "exp": time.time() + 5 * 60,
             "data": [link for link in res.text.strip().splitlines() if link],
         }
+
         return self._links_cache[repo]["data"]
+
     async def get_repo_list(
         self,
         only_primary: bool = False,
@@ -245,10 +291,12 @@ class LoaderMod(loader.Module):
             )
             if repo.startswith("http")
         }
+
     async def get_links_list(self) -> typing.List[str]:
         links = await self.get_repo_list()
         main_repo = list(links.pop(self.config["MODULES_REPO"]).values())
         return main_repo + list(dict(ChainMap(*list(links.values()))).values())
+
     async def _find_link(self, module_name: str) -> typing.Union[str, bool]:
         return next(
             filter(
@@ -257,6 +305,7 @@ class LoaderMod(loader.Module):
             ),
             False,
         )
+
     async def download_and_install(
         self,
         module_name: str,
@@ -277,21 +326,27 @@ class LoaderMod(loader.Module):
                     blob_link = True
             else:
                 url = await self._find_link(module_name)
+
                 if not url:
                     if message is not None:
                         await utils.answer(message, self.strings("no_module"))
+
                     return MODULE_LOADING_FAILED
+
             if message:
                 message = await utils.answer(
                     message,
                     self.strings("installing").format(module_name),
                 )
+
             try:
                 r = await self._storage.fetch(url, auth=self.config["basic_auth"])
             except requests.exceptions.HTTPError:
                 if message is not None:
                     await utils.answer(message, self.strings("no_module"))
+
                 return MODULE_LOADING_FAILED
+
             await self.load_module(
                 r,
                 message,
@@ -303,6 +358,7 @@ class LoaderMod(loader.Module):
         except Exception:
             logger.exception("Failed to load %s", module_name)
             return MODULE_LOADING_FAILED
+
     async def _inline__load(
         self,
         call: InlineCall,
@@ -321,7 +377,9 @@ class LoaderMod(loader.Module):
             self._db.set(main.__name__, "permanent_modules_fs", False)
         elif mode == "once":
             save = True
+
         await self.load_module(doc, call, origin=path_ or "<string>", save_fs=save)
+
     @loader.command(alias="lm")
     async def loadmod(self, message: Message, force_pm: bool = False):
         args = utils.get_args_raw(message)
@@ -330,20 +388,26 @@ class LoaderMod(loader.Module):
             args = args.replace("-fs", "").strip()
         else:
             force_save = False
+
         msg = message if message.file else (await message.get_reply_message())
+
         if msg is None or msg.media is None:
             await utils.answer(message, self.strings("provide_module"))
             return
+
         await utils.answer(
             message, self.strings("loading_module_via_file")
         )
+
         path_ = None
         doc = await msg.download_media(bytes)
+
         try:
             doc = doc.decode()
         except UnicodeDecodeError:
             await utils.answer(message, self.strings("bad_unicode"))
             return
+
         if (
             not self._db.get(
                 main.__name__,
@@ -356,6 +420,7 @@ class LoaderMod(loader.Module):
             if message.file:
                 await message.edit("")
                 message = await message.respond("🪐", reply_to=utils.get_topic(message))
+
             if await self.inline.form(
                 self.strings("module_fs"),
                 message=message,
@@ -389,6 +454,7 @@ class LoaderMod(loader.Module):
                 ],
             ):
                 return
+
         if path_ is not None:
             await self.load_module(
                 doc,
@@ -410,6 +476,7 @@ class LoaderMod(loader.Module):
                     and not self._db.get(main.__name__, "disable_modules_fs", False)
                 ),
             )
+
     async def approve_internal(
         self,
         call: InlineCall,
@@ -422,6 +489,7 @@ class LoaderMod(loader.Module):
         await self._client(JoinChannelRequest(channel))
         event.status = True
         event.set()
+
         await call.edit(
             (
                 "💫 <b>Joined <a"
@@ -429,9 +497,11 @@ class LoaderMod(loader.Module):
             ),
             photo="https://raw.githubusercontent.com/coddrago/assets/refs/heads/main/skyline/joined_jr.png",
         )
+
     async def install_requirements(self, requirements: list):
         is_venv = hasattr(sys, 'real_prefix') or sys.prefix != getattr(sys, 'base_prefix', sys.prefix)
         need_user_flag = loader.USER_INSTALL and not is_venv
+
         pip = await asyncio.create_subprocess_exec(
             sys.executable,
             "-m",
@@ -444,10 +514,14 @@ class LoaderMod(loader.Module):
             *["--user"] if need_user_flag else [],
             *requirements,
         )
+
         rc = await pip.wait()
+
         if rc != 0:
             return False
+
         return True
+
     async def load_module(
         self,
         doc: str,
@@ -465,6 +539,7 @@ class LoaderMod(loader.Module):
             if isinstance(message, Message):
                 await utils.answer(message, self.strings("ffmpeg_required"))
             return
+
         if (
             any(line.replace(" ", "") == "#scope:inline" for line in doc.splitlines())
             and not self.inline.init_complete
@@ -472,6 +547,7 @@ class LoaderMod(loader.Module):
             if isinstance(message, Message):
                 await utils.answer(message, self.strings("inline_init_failed"))
             return
+
         if re.search(r"# ?scope: ?skyline_min", doc):
             ver = re.search(r"# ?scope: ?skyline_min ((?:\d+\.){2}\d+)", doc).group(1)
             ver_ = tuple(map(int, ver.split(".")))
@@ -482,6 +558,7 @@ class LoaderMod(loader.Module):
                         await message.edit("")
                     else:
                         m = message
+
                     await self.inline.form(
                         self.strings("version_incompatible").format(ver),
                         m,
@@ -497,8 +574,10 @@ class LoaderMod(loader.Module):
                         ],
                     )
                 return
+
         developer = re.search(r"# ?meta developer: ?(.+)", doc)
         developer = developer.group(1) if developer else False
+
         if not did_requires:
             requirements = []
             try:
@@ -513,13 +592,19 @@ class LoaderMod(loader.Module):
                             )
             except TypeError:
                 pass
+
             if requirements:
                 await self.install_requirements(requirements)
+
                 importlib.invalidate_caches()
+
                 kwargs = utils.get_kwargs()
                 kwargs["did_requires"] = True
+
                 return await self.load_module(**kwargs)  # Try again
+
         blob_link = self.strings("blob_link") if blob_link else ""
+
         if name is None:
             try:
                 node = ast.parse(doc)
@@ -544,18 +629,25 @@ class LoaderMod(loader.Module):
         else:
             if name.startswith(self.config["MODULES_REPO"]):
                 name = name.split("/")[-1].split(".py")[0]
+
             uid = name.replace("%", "%%").replace(".", "%d")
+
         module_name = f"skyline.modules.{uid}"
         doc = geek.compat(doc)
+        
         async def restart_inline(call: InlineCall):
             await call.edit(self.strings["requirements_restarted"])
             await self.invoke("restart", "-f", message = message)
+
         async def core_overwrite(e: CoreOverwriteError):
             nonlocal message
+
             with contextlib.suppress(Exception):
                 self.allmodules.modules.remove(instance)
+
             if not message:
                 return
+
             await utils.answer(
                 message,
                 self.strings(f"overwrite_{e.type}").format(
@@ -566,6 +658,7 @@ class LoaderMod(loader.Module):
                     )
                 ),
             )
+
         try:
             try:
                 spec = ModuleSpec(
@@ -591,9 +684,12 @@ class LoaderMod(loader.Module):
                         "skylinetl": "Skyline-TL-New",
                     }.get(e.name.lower(), e.name)
                 ]
+
                 if not requirements:
                     raise Exception("Nothing to install") from e
+
                 logger.debug("Installing requirements: %s", requirements)
+
                 if did_requirements:
                     if message is not None:
                         await self.inline.form(
@@ -605,7 +701,9 @@ class LoaderMod(loader.Module):
                                 }
                             ]
                         )
+
                     return
+
                 if message is not None:
                     await utils.answer(
                         message,
@@ -617,6 +715,7 @@ class LoaderMod(loader.Module):
                             )
                         ),
                     )
+
                 result = await self.install_requirements(requirements)
                 if not result:
                     if message is not None:
@@ -624,10 +723,14 @@ class LoaderMod(loader.Module):
                             message,
                             self.strings("requirements_failed")
                         )
+
                     return
+
                 importlib.invalidate_caches()
+
                 kwargs = utils.get_kwargs()
                 kwargs["did_requirements"] = True
+
                 return await self.load_module(**kwargs)  # Try again
             except CoreOverwriteError as e:
                 await core_overwrite(e)
@@ -635,8 +738,10 @@ class LoaderMod(loader.Module):
             except (loader.LoadError, ScamDetectionError) as e:
                 with contextlib.suppress(Exception):
                     await self.allmodules.unload_module(instance.__class__.__name__)
+
                 with contextlib.suppress(Exception):
                     self.allmodules.modules.remove(instance)
+
                 if message:
                     if isinstance(e, loader.LoadError):
                         await utils.answer(
@@ -659,9 +764,12 @@ class LoaderMod(loader.Module):
                 return
         except Exception as e:
             logger.exception("Loading external module failed due to %s", e)
+
             if message is not None:
                 await utils.answer(message, self.strings("load_failed"))
+
             return
+
         if hasattr(instance, "__version__") and isinstance(instance.__version__, tuple):
             version = (
                 "<b><i>"
@@ -669,9 +777,11 @@ class LoaderMod(loader.Module):
             )
         else:
             version = ""
+
         try:
             try:
                 self.allmodules.send_config_one(instance)
+
                 async def inner_proxy():
                     nonlocal instance, message
                     while True:
@@ -693,7 +803,9 @@ class LoaderMod(loader.Module):
                                     ),
                                 )
                                 return
+
                         await asyncio.sleep(0.1)
+
                 task = asyncio.ensure_future(inner_proxy())
                 await self.allmodules.send_ready_one(
                     instance,
@@ -707,8 +819,10 @@ class LoaderMod(loader.Module):
             except (loader.LoadError, ScamDetectionError) as e:
                 with contextlib.suppress(Exception):
                     await self.allmodules.unload_module(instance.__class__.__name__)
+
                 with contextlib.suppress(Exception):
                     self.allmodules.modules.remove(instance)
+
                 if message:
                     if isinstance(e, loader.LoadError):
                         await utils.answer(
@@ -733,8 +847,10 @@ class LoaderMod(loader.Module):
                 logger.debug("Unloading %s, because it raised `SelfUnload`", instance)
                 with contextlib.suppress(Exception):
                     await self.allmodules.unload_module(instance.__class__.__name__)
+
                 with contextlib.suppress(Exception):
                     self.allmodules.modules.remove(instance)
+
                 if message:
                     await utils.answer(
                         message,
@@ -757,9 +873,12 @@ class LoaderMod(loader.Module):
                 return
         except Exception as e:
             logger.exception("Module threw because of %s", e)
+
             if message is not None:
                 await utils.answer(message, self.strings("load_failed"))
+
             return
+
         instance.skyline_meta_pic = next(
             (
                 line.replace(" ", "").split("#metapic:", maxsplit=1)[1]
@@ -768,6 +887,7 @@ class LoaderMod(loader.Module):
             ),
             None,
         )
+
         pack_url = next(
             (
                 line.replace(" ", "").split("#packurl:", maxsplit=1)[1]
@@ -776,20 +896,24 @@ class LoaderMod(loader.Module):
             ),
             None,
         )
+
         if pack_url and (
             transations := await self.allmodules.translator.load_module_translations(
                 pack_url
             )
         ):
             instance.strings.external_strings = transations
+
         for alias, cmd in self.lookup("settings").get("aliases", {}).items():
             _cmd = cmd.split(maxsplit=1)
             if _cmd[0] in instance.commands:
                 self.allmodules.add_alias(alias, *_cmd)
+
         try:
             modname = instance.strings("name")
         except (KeyError, AttributeError):
             modname = getattr(instance, "name", instance.__class__.__name__)
+
         try:
             developer_entity = await (
                 self._client.force_get_entity
@@ -805,18 +929,24 @@ class LoaderMod(loader.Module):
             )(developer)
         except Exception:
             developer_entity = None
+
         if not isinstance(developer_entity, Channel):
             developer_entity = None
+
         if message is None:
             return
+
         modhelp = ""
+
         if instance.__doc__:
             modhelp += (
                 "<i>\n<emoji document_id=5879813604068298387>ℹ️</emoji>"
                 f" {utils.escape_html(inspect.getdoc(instance))}</i>\n"
             )
+
         subscribe = ""
         subscribe_markup = None
+
         depends_from = []
         for key in dir(instance):
             value = getattr(instance, key)
@@ -833,11 +963,13 @@ class LoaderMod(loader.Module):
                         ),
                     )
                 )
+
         depends_from = (
             self.strings("depends_from").format("\n".join(depends_from))
             if depends_from
             else ""
         )
+
         def loaded_msg(use_subscribe: bool = True):
             nonlocal \
                 modname, \
@@ -863,6 +995,7 @@ class LoaderMod(loader.Module):
                 blob_link,
                 subscribe if use_subscribe else "",
             )
+
         if developer:
             if developer.startswith("@") and developer not in self.get(
                 "do_not_subscribe", []
@@ -895,6 +1028,7 @@ class LoaderMod(loader.Module):
                             ),
                         },
                     ]
+
             developer = self.strings("developer").format(
                 utils.escape_html(developer)
                 if isinstance(developer_entity, Channel)
@@ -902,12 +1036,14 @@ class LoaderMod(loader.Module):
             )
         else:
             developer = ""
+
         if any(
             line.replace(" ", "") == "#scope:disable_onload_docs"
             for line in doc.splitlines()
         ):
             await utils.answer(message, loaded_msg(), reply_markup=subscribe_markup)
             return
+
         for _name, fun in sorted(
             instance.commands.items(),
             key=lambda x: x[0],
@@ -922,6 +1058,7 @@ class LoaderMod(loader.Module):
                     else self.strings("undoc")
                 ),
             )
+
         if self.inline.init_complete:
             for _name, fun in sorted(
                 instance.inline_handlers.items(),
@@ -935,10 +1072,12 @@ class LoaderMod(loader.Module):
                         else self.strings("undoc")
                     ),
                 )
+
         try:
             await utils.answer(message, loaded_msg(), reply_markup=subscribe_markup)
         except MediaCaptionTooLongError:
             await message.reply(loaded_msg(False))
+
     async def _inline__subscribe(
         self,
         call: InlineCall,
@@ -951,16 +1090,20 @@ class LoaderMod(loader.Module):
             await utils.answer(call, msg())
             await call.answer(self.strings("not_subscribed"))
             return
+
         await self._client(JoinChannelRequest(entity))
         await utils.answer(call, msg())
         await call.answer(self.strings("subscribed"))
+
     @loader.command(alias="ulm")
     async def unloadmod(self, message: Message):
         if not (args := utils.get_args_raw(message)):
             await utils.answer(message, self.strings("no_class"))
             return
+
         if len(args.split("\n")) == 1:
             msg = await self.unload_module(args)
+
         else:
             modules = [m for m in args.split("\n") if m]
             success = []
@@ -971,10 +1114,12 @@ class LoaderMod(loader.Module):
                 if "🚫" in status or "😖" in status:
                     if "💡" in status:
                         status = status.split("<code>")[0]
+
                     errors.append(
                         f"<code>{module}</code> — {status}"
                     )
                 else: success.append(f"<code>{module}</code>")
+
             if success:
                 msg += self.strings["modules_unloaded"].format(
                     unloaded_num = len(success),
@@ -985,15 +1130,20 @@ class LoaderMod(loader.Module):
                     not_unloaded = len(errors),
                     errors="\n".join(errors),
                 ))
+
         await utils.answer(message, msg)
+
     async def unload_module(self, module: str) -> str:
         instance = self.lookup(module)
+
         if issubclass(instance.__class__, loader.Library):
             return self.strings("cannot_unload_lib")
+
         try:
             worked = await self.allmodules.unload_module(module)
         except CoreUnloadError as e:
             return self.strings("unload_core").format(module)
+
         if not self.allmodules.secure_boot:
             self.set(
                 "loaded_modules",
@@ -1003,6 +1153,7 @@ class LoaderMod(loader.Module):
                     if mod not in worked
                 },
             )
+
         msg = (
             self.strings("unloaded").format(
                 "<emoji document_id=5784993237412351403>✅</emoji>",
@@ -1014,6 +1165,8 @@ class LoaderMod(loader.Module):
             else self.strings("not_unloaded")
         )
         return msg
+
+
     @loader.command()
     async def clearmodules(self, message: Message):
         await self.inline.form(
@@ -1030,6 +1183,7 @@ class LoaderMod(loader.Module):
                 },
             ],
         )
+
     @loader.command()
     async def addrepo(self, message: Message):
         if not (args := utils.get_args_raw(message)) or (
@@ -1037,10 +1191,13 @@ class LoaderMod(loader.Module):
         ):
             await utils.answer(message, self.strings("no_repo"))
             return
+
         if args.endswith("/"):
             args = args[:-1]
+
         if not args.startswith("https://") and not args.startswith("http://"):
             args = f"https://{args}"
+
         try:
             r = await utils.run_sync(
                 requests.get,
@@ -1057,68 +1214,93 @@ class LoaderMod(loader.Module):
         except Exception:
             await utils.answer(message, self.strings("no_repo"))
             return
+
         if args in self.config["ADDITIONAL_REPOS"]:
             await utils.answer(message, self.strings("repo_exists").format(args))
             return
+
         self.config["ADDITIONAL_REPOS"] += [args]
+
         await utils.answer(message, self.strings("repo_added").format(args))
+
     @loader.command()
     async def delrepo(self, message: Message):
         if not (args := utils.get_args_raw(message)) or not utils.check_url(args):
             await utils.answer(message, self.strings("no_repo"))
             return
+
         if args.endswith("/"):
             args = args[:-1]
+
         if args not in self.config["ADDITIONAL_REPOS"]:
             await utils.answer(message, self.strings("repo_not_exists"))
             return
+
         self.config["ADDITIONAL_REPOS"].remove(args)
+
         await utils.answer(message, self.strings("repo_deleted").format(args))
+
     async def _inline__clearmodules(self, call: InlineCall):
         self.set("loaded_modules", {})
+
         for file in os.scandir(loader.LOADED_MODULES_DIR):
             try:
                 shutil.rmtree(file.path)
             except Exception:
                 logger.debug("Failed to remove %s", file.path, exc_info=True)
+
         await utils.answer(call, self.strings("all_modules_deleted"))
         await self.lookup("Updater").restart_common(call)
+
     async def _update_modules(self):
         todo = await self._get_modules_to_load()
+
         self._secure_boot = False
+
         if self._db.get(loader.__name__, "secure_boot", False):
             self._db.set(loader.__name__, "secure_boot", False)
             self._secure_boot = True
         else:
             for mod in todo.values():
                 await self.download_and_install(mod)
+
             self.update_modules_in_db()
+
             aliases = {
                 alias: cmd
                 for alias, cmd in self.lookup("settings").get("aliases", {}).items()
                 if self.allmodules.add_alias(alias, *cmd.split(maxsplit=1))
             }
+
             self.lookup("settings").set("aliases", aliases)
+
         self.fully_loaded = True
+
         with contextlib.suppress(AttributeError):
             await self.lookup("Updater").full_restart_complete(self._secure_boot)
+
     def flush_cache(self) -> int:
         """Flush the cache of links to modules"""
         count = sum(map(len, self._links_cache.values()))
         self._links_cache = {}
         return count
+
     def inspect_cache(self) -> int:
         """Inspect the cache of links to modules"""
         return sum(map(len, self._links_cache.values()))
+
     async def reload_core(self) -> int:
         """Forcefully reload all core modules"""
         self.fully_loaded = False
+
         if self._secure_boot:
             self._db.set(loader.__name__, "secure_boot", True)
+
         if not self._db.get(main.__name__, "remove_core_protection", False):
             for module in self.allmodules.modules:
                 if module.__origin__.startswith("<core"):
                     module.__origin__ = "<reload-core>"
+
         loaded = await self.allmodules.register_all(no_external=True)
         for instance in loaded:
             self.allmodules.send_config_one(instance)
@@ -1127,17 +1309,21 @@ class LoaderMod(loader.Module):
                 no_self_unload=False,
                 from_dlmod=False,
             )
+
         self.fully_loaded = True
         return len(loaded)
+
     @loader.command()
     async def mlcmd(self, message: Message):
         """| send module via file"""
         if not (args := utils.get_args_raw(message)):
             await utils.answer(message, self.strings("args"))
             return
+
         await utils.answer(
             message, self.strings("ml_load_module")
         )
+
         exact = True
         if not (
             class_name := next(
@@ -1177,14 +1363,18 @@ class LoaderMod(loader.Module):
             ):
                 await utils.answer(message, self.strings("404"))
                 return
+
             exact = False
+
         try:
             module = self.lookup(class_name)
             sys_module = inspect.getmodule(module)
         except Exception:
             await utils.answer(message, self.strings("404"))
             return
+
         link = module.__origin__
+
         text = (
             f"<b>🧳 {utils.escape_html(class_name)}</b>"
             if not utils.check_url(link)
@@ -1194,6 +1384,7 @@ class LoaderMod(loader.Module):
                 f' <code>{link}</code>\n\n{self.strings("not_exact") if not exact else ""}'
             )
         )
+
         text = (
             self.strings("link").format(
                 class_name=utils.escape_html(class_name),
@@ -1208,15 +1399,18 @@ class LoaderMod(loader.Module):
                 prefix=utils.escape_html(self.get_prefix()),
             )
         )
+
         file = io.BytesIO(sys_module.__loader__.data)
         file.name = f"{class_name}.py"
         file.seek(0)
+
         await utils.answer(
             message,
             text,
             file=file,
             reply_to=getattr(message, "reply_to_msg_id", None),
         )
+
     def _format_result(
         self,
         result: dict,
@@ -1230,6 +1424,7 @@ class LoaderMod(loader.Module):
                 for cmd, cmd_doc in result["module"]["commands"].items()
             ]
         )
+
         kwargs = {
             "name": utils.escape_html(result["module"]["name"]),
             "dev": utils.escape_html(result["module"]["dev"]),
@@ -1239,13 +1434,17 @@ class LoaderMod(loader.Module):
             "query": utils.escape_html(query),
             "prefix": utils.escape_html(self.get_prefix()),
         }
+
         strings = (
             self.strings.get("result", "en")
             if self.config["translate"] and not no_translate
             else self.strings("result")
         )
+
         text = strings.format(**kwargs)
+
         if len(text) > 1980:
             kwargs["commands"] = "..."
             text = strings.format(**kwargs)
+
         return text

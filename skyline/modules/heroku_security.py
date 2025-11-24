@@ -1,10 +1,14 @@
+
+
 import contextlib
 import datetime
 import time
 import typing
+
 from skylinetl.hints import EntityLike
 from skylinetl.tl.types import Message, PeerUser, User
 from skylinetl.utils import get_display_name
+
 from .. import loader, main, security, utils
 from ..inline.types import InlineCall, InlineMessage
 from ..security import (
@@ -22,17 +26,23 @@ from ..security import (
     PM,
     SecurityGroup,
 )
+
+
 @loader.tds
 class SkylineSecurityMod(loader.Module):
     """Control security settings"""
+
     strings = {"name": "SkylineSecurity"}
+
     async def client_ready(self):
         self._sgroups: typing.Iterable[str, SecurityGroup] = self.pointer(
             "sgroups", {}, item_type=SecurityGroup
         )
         self._reload_sgroups()
+
     def _reload_sgroups(self):
         self._client.dispatcher.security.apply_sgroups(self._sgroups.todict())
+
     async def inline__switch_perm(
         self,
         call: InlineCall,
@@ -46,18 +56,23 @@ class SkylineSecurityMod(loader.Module):
             if is_inline
             else self.allmodules.commands[command]
         )
+
         mask = self._db.get(security.__name__, "masks", {}).get(
             f"{cmd.__module__}.{cmd.__name__}",
             getattr(cmd, "security", security.DEFAULT_PERMISSIONS),
         )
+
         bit = security.BITMAP[group.upper()]
+
         if level:
             mask |= bit
         else:
             mask &= ~bit
+
         masks = self._db.get(security.__name__, "masks", {})
         masks[f"{cmd.__module__}.{cmd.__name__}"] = mask
         self._db.set(security.__name__, "masks", masks)
+
         if (
             not self._db.get(security.__name__, "bounding_mask", DEFAULT_PERMISSIONS)
             & bit
@@ -72,6 +87,7 @@ class SkylineSecurityMod(loader.Module):
             )
         else:
             await call.answer("Security value set!")
+
         await call.edit(
             self.strings("permissions").format(
                 utils.escape_html(
@@ -81,6 +97,7 @@ class SkylineSecurityMod(loader.Module):
             ),
             reply_markup=self._build_markup(cmd, is_inline),
         )
+
     async def inline__switch_perm_bm(
         self,
         call: InlineCall,
@@ -90,16 +107,20 @@ class SkylineSecurityMod(loader.Module):
     ):
         mask = self._db.get(security.__name__, "bounding_mask", DEFAULT_PERMISSIONS)
         bit = security.BITMAP[group.upper()]
+
         if level:
             mask |= bit
         else:
             mask &= ~bit
+
         self._db.set(security.__name__, "bounding_mask", mask)
+
         await call.answer("Bounding mask value set!")
         await call.edit(
             self.strings("global"),
             reply_markup=self._build_markup_global(is_inline),
         )
+
     def _build_markup(
         self,
         command: callable,
@@ -150,6 +171,7 @@ class SkylineSecurityMod(loader.Module):
                 ]
             ]
         )
+
     def _build_markup_global(
         self,
         is_inline: bool = False,
@@ -165,11 +187,13 @@ class SkylineSecurityMod(loader.Module):
             ],
             2,
         ) + [[{"text": self.strings("close_menu"), "action": "close"}]]
+
     def _get_current_bm(self, is_inline: bool = False) -> dict:
         return self._perms_map(
             self._db.get(security.__name__, "bounding_mask", DEFAULT_PERMISSIONS),
             is_inline,
         )
+
     @staticmethod
     def _perms_map(perms: int, is_inline: bool) -> dict:
         return (
@@ -191,6 +215,7 @@ class SkylineSecurityMod(loader.Module):
                 "everyone": bool(perms & EVERYONE),
             }
         )
+
     def _get_current_perms(
         self,
         command: callable,
@@ -203,22 +228,28 @@ class SkylineSecurityMod(loader.Module):
             ),
             is_inline,
         )
+
     @loader.command()
     async def newsgroup(self, message: Message):
         if not (args := utils.get_args_raw(message)):
             await utils.answer(message, self.strings("no_args"))
             return
+
         if not all([i.isalnum() for i in args]):
             await utils.answer(message, self.strings("invalid_name"))
             return
+
         if args in self._sgroups:
             await utils.answer(
                 message, self.strings("sgroup_already_exists").format(args)
             )
             return
+
         self._sgroups[args] = SecurityGroup(args, [], [])
         self._reload_sgroups()
+
         await utils.answer(message, self.strings("created_sgroup").format(args))
+
     @loader.command()
     async def sgroups(self, message: Message):
         await utils.answer(
@@ -232,14 +263,17 @@ class SkylineSecurityMod(loader.Module):
                 )
             ),
         )
+
     @loader.command()
     async def sgroup(self, message: Message):
         if not (args := utils.get_args_raw(message)):
             await utils.answer(message, self.strings("no_args"))
             return
+
         if not (group := self._sgroups.get(args)):
             await utils.answer(message, self.strings("sgroup_not_found").format(args))
             return
+
         await utils.answer(
             message,
             self.strings("sgroup_info").format(
@@ -290,26 +324,34 @@ class SkylineSecurityMod(loader.Module):
                 ),
             ),
         )
+
     @loader.command()
     async def delsgroup(self, message: Message):
         if not (args := utils.get_args_raw(message)):
             await utils.answer(message, self.strings("no_args"))
             return
+
         if not self._sgroups.get(args):
             await utils.answer(message, self.strings("sgroup_not_found").format(args))
             return
+
         del self._sgroups[args]
         self._reload_sgroups()
+
         await utils.answer(message, self.strings("deleted_sgroup").format(args))
+
     @loader.command()
     async def sgroupadd(self, message: Message):
         if not (args := utils.get_args_raw(message)):
             await utils.answer(message, self.strings("no_args"))
             return
+
         if len(args.split()) >= 2:
             group, user = args.split()
+
             if user.isdigit():
                 user = int(user)
+
             try:
                 user = await self._client.get_entity(user, exp=0)
             except ValueError:
@@ -319,10 +361,13 @@ class SkylineSecurityMod(loader.Module):
             if not message.is_reply:
                 await utils.answer(message, self.strings("no_args"))
                 return
+
             group, user = args, await (await message.get_reply_message()).get_sender()
+
         if not (group := self._sgroups.get(group)):
             await utils.answer(message, self.strings("sgroup_not_found").format(group))
             return
+
         if user.id in group.users:
             await utils.answer(
                 message,
@@ -332,9 +377,11 @@ class SkylineSecurityMod(loader.Module):
                 ),
             )
             return
+
         group.users.append(user.id)
         self._sgroups[group.name] = group
         self._reload_sgroups()
+
         await utils.answer(
             message,
             self.strings("user_added_to_sgroup").format(
@@ -342,15 +389,19 @@ class SkylineSecurityMod(loader.Module):
                 group.name,
             ),
         )
+
     @loader.command()
     async def sgroupdel(self, message: Message):
         if not (args := utils.get_args_raw(message)):
             await utils.answer(message, self.strings("no_args"))
             return
+
         if len(args.split()) >= 2:
             group, user = args.split()
+
             if user.isdigit():
                 user = int(user)
+
             try:
                 user = await self._client.get_entity(user, exp=0)
             except ValueError:
@@ -360,10 +411,13 @@ class SkylineSecurityMod(loader.Module):
             if not message.is_reply:
                 await utils.answer(message, self.strings("no_args"))
                 return
+
             group, user = args, await (await message.get_reply_message()).get_sender()
+
         if not (group := self._sgroups.get(group)):
             await utils.answer(message, self.strings("sgroup_not_found").format(group))
             return
+
         if user.id not in group.users:
             await utils.answer(
                 message,
@@ -373,9 +427,11 @@ class SkylineSecurityMod(loader.Module):
                 ),
             )
             return
+
         group.users.remove(user.id)
         self._sgroups[group.name] = group
         self._reload_sgroups()
+
         await utils.answer(
             message,
             self.strings("user_removed_from_sgroup").format(
@@ -383,6 +439,7 @@ class SkylineSecurityMod(loader.Module):
                 group.name,
             ),
         )
+
     @loader.command()
     async def security(self, message: Message):
         if (
@@ -390,6 +447,7 @@ class SkylineSecurityMod(loader.Module):
         ) and args not in self.allmodules.commands:
             await utils.answer(message, self.strings("no_command").format(args))
             return
+
         if not args:
             await self.inline.form(
                 self.strings("global"),
@@ -398,12 +456,14 @@ class SkylineSecurityMod(loader.Module):
                 ttl=5 * 60,
             )
             return
+
         await self.inline.form(
             self.strings("permissions").format(self.get_prefix(), args),
             reply_markup=self._build_markup(self.allmodules.commands[args]),
             message=message,
             ttl=5 * 60,
         )
+
     @loader.command()
     async def inlinesec(self, message: Message):
         if not (args := utils.get_args_raw(message).lower().strip()):
@@ -414,9 +474,11 @@ class SkylineSecurityMod(loader.Module):
                 ttl=5 * 60,
             )
             return
+
         if args not in self.allmodules.inline_handlers:
             await utils.answer(message, self.strings("no_command").format(args))
             return
+
         await self.inline.form(
             self.strings("permissions").format(f"@{self.inline.bot_username} ", args),
             reply_markup=self._build_markup(
@@ -426,30 +488,39 @@ class SkylineSecurityMod(loader.Module):
             message=message,
             ttl=5 * 60,
         )
+
     async def _resolve_user(self, message: Message):
         if not (args := utils.get_args_raw(message)) and not (
             reply := await message.get_reply_message()
         ):
             await utils.answer(message, self.strings("no_user"))
             return
+
         user = None
+
         if args:
             with contextlib.suppress(Exception):
                 if str(args).isdigit():
                     args = int(args)
+
                 user = await self._client.get_entity(args, exp=0)
+
         if user is None:
             try:
                 user = await self._client.get_entity(reply.sender_id, exp=0)
             except ValueError:
                 user = await reply.get_sender()
+
         if not isinstance(user, (User, PeerUser)):
             await utils.answer(message, self.strings("not_a_user"))
             return
+
         if user.id == self.tg_id:
             await utils.answer(message, self.strings("self"))
             return
+
         return user
+
     async def _add_to_group(
         self,
         message: typing.Union[Message, InlineCall],
@@ -459,8 +530,10 @@ class SkylineSecurityMod(loader.Module):
     ):
         if user is None and not (user := await self._resolve_user(message)):
             return
+
         if isinstance(user, int):
             user = await self._client.get_entity(user, exp=0)
+
         if not confirmed:
             await self.inline.form(
                 self.strings("warning").format(
@@ -483,8 +556,10 @@ class SkylineSecurityMod(loader.Module):
                 ],
             )
             return
+
         if user.id not in getattr(self._client.dispatcher.security, group):
             getattr(self._client.dispatcher.security, group).append(user.id)
+
         await message.edit(
             (
                 self.strings(f"{group}_added").format(
@@ -506,28 +581,35 @@ class SkylineSecurityMod(loader.Module):
                 },
             ],
         )
+
     async def _enable_nonick(self, call: InlineCall, user: User):
         self._db.set(
             main.__name__,
             "nonickusers",
             list(set(self._db.get(main.__name__, "nonickusers", []) + [user.id])),
         )
+
         await call.edit(
             self.strings("user_nn").format(
                 user.id,
                 utils.escape_html(get_display_name(user)),
             )
         )
+
         await call.unload()
+
     @loader.command()
     async def owneradd(self, message: Message):
         await self._add_to_group(message, "owner")
+
     @loader.command()
     async def ownerrm(self, message: Message):
         if not (user := await self._resolve_user(message)):
             return
+
         if user.id in self._client.dispatcher.security.owner:
             self._client.dispatcher.security.owner.remove(user.id)
+
         await utils.answer(
             message,
             self.strings("owner_removed").format(
@@ -535,6 +617,7 @@ class SkylineSecurityMod(loader.Module):
                 utils.escape_html(get_display_name(user)),
             ),
         )
+
     @loader.command()
     async def ownerlist(self, message: Message):
         _resolved_users = []
@@ -542,12 +625,15 @@ class SkylineSecurityMod(loader.Module):
         for user in set(self._client.dispatcher.security.owner + [self.tg_id]):
             with contextlib.suppress(Exception):
                 _resolved_users += [await self._client.get_entity(user, exp=0)]
+
         if not _resolved_users:
             await utils.answer(message, self.strings("no_owner"))
             return
+
         prefixes = self._db.get(main.__name__, f"command_prefixes", {})
         for user in _resolved_users:
             _and_prefixes += [prefixes.get(str(user.id), None)]
+
         await utils.answer(
             message,
             self.strings("owner_list").format(
@@ -561,10 +647,12 @@ class SkylineSecurityMod(loader.Module):
                 )
             ),
         )
+
     def _lookup(self, needle: str) -> str:
         command = needle
         for prefix in self.get_prefixes():
             command = command.lower().removeprefix(prefix)
+
         return (
             (
                 []
@@ -586,6 +674,7 @@ class SkylineSecurityMod(loader.Module):
                 else []
             )
         )
+
     @staticmethod
     def _extract_time(args: list) -> int:
         for suffix, quantifier in [
@@ -605,7 +694,9 @@ class SkylineSecurityMod(loader.Module):
             )
             if duration is not None:
                 return duration * quantifier
+
         return 0
+
     def _convert_time_abs(self, timestamp: int) -> str:
         return (
             self.strings("forever")
@@ -614,6 +705,7 @@ class SkylineSecurityMod(loader.Module):
                 "%Y-%m-%d %H:%M:%S"
             )
         )
+
     def _convert_time(self, duration: int) -> str:
         return (
             self.strings("forever")
@@ -648,6 +740,7 @@ class SkylineSecurityMod(loader.Module):
                 )
             )
         )
+
     async def _add_rule(
         self,
         call: InlineCall,
@@ -659,6 +752,7 @@ class SkylineSecurityMod(loader.Module):
         if rule.startswith("inline") and target_type == "chat":
             await call.edit(self.strings("chat_inline"))
             return
+
         if target_type == "sgroup":
             group = self._sgroups[target]
             group.permissions.append(
@@ -679,6 +773,7 @@ class SkylineSecurityMod(loader.Module):
                 rule,
                 duration,
             )
+
         await call.edit(
             self.strings("rule_added").format(
                 self.strings(target_type),
@@ -702,6 +797,7 @@ class SkylineSecurityMod(loader.Module):
                 ),
             )
         )
+
     async def _confirm(
         self,
         obj: typing.Union[Message, InlineMessage],
@@ -742,14 +838,17 @@ class SkylineSecurityMod(loader.Module):
                 {"text": self.strings("cancel_btn"), "action": "close"},
             ],
         )
+
     async def _tsec_chat(self, message: Message, args: list):
         if len(args) == 1 and message.is_private:
             await utils.answer(message, self.strings("no_target"))
             return
+
         if len(args) >= 2:
             try:
                 if not args[1].isdigit() and not args[1].startswith("@"):
                     raise ValueError
+
                 target = await self._client.get_entity(
                     int(args[1]) if args[1].isdigit() else args[1],
                     exp=0,
@@ -760,12 +859,15 @@ class SkylineSecurityMod(loader.Module):
                 else:
                     await utils.answer(message, self.strings("no_target"))
                     return
+
         if not (
             possible_rules := utils.array_sum([self._lookup(arg) for arg in args[1:]])
         ):
             await utils.answer(message, self.strings("no_rule"))
             return
+
         duration = self._extract_time(args)
+
         if len(possible_rules) > 1:
             await self.inline.form(
                 message=message,
@@ -794,20 +896,26 @@ class SkylineSecurityMod(loader.Module):
                 ),
             )
             return
+
         await self._confirm(message, "chat", target, possible_rules[0], duration)
+
     async def _tsec_sgroup(self, message: Message, args: list):
         if len(args) <= 1:
             await utils.answer(message, self.strings("no_target"))
             return
+
         if (target := args[1]) not in self._sgroups:
             await utils.answer(message, self.strings("sgroup_not_found").format(target))
             return
+
         if not (
             possible_rules := utils.array_sum([self._lookup(arg) for arg in args[1:]])
         ):
             await utils.answer(message, self.strings("no_rule"))
             return
+
         duration = self._extract_time(args)
+
         if len(possible_rules) > 1:
             await self.inline.form(
                 message=message,
@@ -836,7 +944,9 @@ class SkylineSecurityMod(loader.Module):
                 ),
             )
             return
+
         await self._confirm(message, "sgroup", target, possible_rules[0], duration)
+
     async def _tsec_user(self, message: Message, args: list):
         if len(args) == 1:
             if not message.is_private and not message.is_reply:
@@ -844,10 +954,12 @@ class SkylineSecurityMod(loader.Module):
                 return
             await utils.answer(message, self.strings("no_rule"))
             return
+
         if len(args) >= 2:
             try:
                 if not args[1].isdigit() and not args[1].startswith("@"):
                     raise ValueError
+
                 target = await self._client.get_entity(
                     int(args[1]) if args[1].isdigit() else args[1],
                     exp=0,
@@ -863,15 +975,19 @@ class SkylineSecurityMod(loader.Module):
                 else:
                     await utils.answer(message, self.strings("no_target"))
                     return
+
         if target.id in self._client.dispatcher.security.owner:
             await utils.answer(message, self.strings("owner_target"))
             return
+
         duration = self._extract_time(args)
+
         if not (
             possible_rules := utils.array_sum([self._lookup(arg) for arg in args[1:]])
         ):
             await utils.answer(message, self.strings("no_rule"))
             return
+
         if len(possible_rules) > 1:
             await self.inline.form(
                 message=message,
@@ -900,9 +1016,12 @@ class SkylineSecurityMod(loader.Module):
                 ),
             )
             return
+
         await self._confirm(message, "user", target, possible_rules[0], duration)
+
     @loader.command()
     async def tsecrm(self, message: Message):
+
         if not (args := utils.get_args(message)) or args[0] not in [
             "user",
             "chat",
@@ -910,10 +1029,12 @@ class SkylineSecurityMod(loader.Module):
         ]:
             await utils.answer(message, self.strings("no_target"))
             return
+
         if args[0] == "user":
             if not message.is_private and not message.is_reply:
                 await utils.answer(message, self.strings("no_target"))
                 return
+
             if message.is_private:
                 target = await self._client.get_entity(message.peer_id, exp=0)
             elif message.is_reply:
@@ -921,6 +1042,7 @@ class SkylineSecurityMod(loader.Module):
                     (await message.get_reply_message()).sender_id,
                     exp=0,
                 )
+
             if not self._client.dispatcher.security.remove_rule(
                 "user",
                 target.id,
@@ -928,6 +1050,7 @@ class SkylineSecurityMod(loader.Module):
             ):
                 await utils.answer(message, self.strings("no_rules"))
                 return
+
             await utils.answer(
                 message,
                 self.strings("rule_removed").format(
@@ -937,10 +1060,12 @@ class SkylineSecurityMod(loader.Module):
                 ),
             )
             return
+
         if args[0] == "sgroup":
             if len(args) < 3 or args[1] not in self._sgroups:
                 await utils.answer(message, self.strings("no_target"))
                 return
+
             group = self._sgroups[args[1]]
             permissions = group.permissions
             _any = False
@@ -948,10 +1073,13 @@ class SkylineSecurityMod(loader.Module):
                 if rule["rule"] == args[2]:
                     permissions.remove(rule)
                     _any = True
+
             if not _any:
                 await utils.answer(message, self.strings("no_rules"))
                 return
+
             self._reload_sgroups()
+
             await utils.answer(
                 message,
                 self.strings("rule_removed").format(
@@ -961,13 +1089,17 @@ class SkylineSecurityMod(loader.Module):
                 ),
             )
             return
+
         if message.is_private:
             await utils.answer(message, self.strings("no_target"))
             return
+
         target = await self._client.get_entity(message.peer_id, exp=0)
+
         if not self._client.dispatcher.security.remove_rule("chat", target.id, args[1]):
             await utils.answer(message, self.strings("no_rules"))
             return
+
         await utils.answer(
             message,
             self.strings("rule_removed").format(
@@ -976,8 +1108,10 @@ class SkylineSecurityMod(loader.Module):
                 utils.escape_html(args[1]),
             ),
         )
+
     @loader.command()
     async def tsecclr(self, message: Message):
+
         if (
             not (args := utils.get_args(message))
             or not (args := args[0])
@@ -985,10 +1119,12 @@ class SkylineSecurityMod(loader.Module):
         ):
             await utils.answer(message, self.strings("no_target"))
             return
+
         if args == "user":
             if not message.is_private and not message.is_reply:
                 await utils.answer(message, self.strings("no_target"))
                 return
+
             if message.is_private:
                 target = await self._client.get_entity(message.peer_id, exp=0)
             elif message.is_reply:
@@ -996,9 +1132,11 @@ class SkylineSecurityMod(loader.Module):
                     (await message.get_reply_message()).sender_id,
                     exp=0,
                 )
+
             if not self._client.dispatcher.security.remove_rules("user", target.id):
                 await utils.answer(message, self.strings("no_rules"))
                 return
+
             await utils.answer(
                 message,
                 self.strings("rules_removed").format(
@@ -1007,14 +1145,17 @@ class SkylineSecurityMod(loader.Module):
                 ),
             )
             return
+
         if args == "sgroup":
             group = utils.get_args(message)[1]
             if not (group := self._sgroups.get(group)):
                 await utils.answer(message, self.strings("no_target"))
                 return
+
             group.permissions.clear()
             self._sgroups[group.name] = group
             self._reload_sgroups()
+
             await utils.answer(
                 message,
                 self.strings("rules_removed").format(
@@ -1023,13 +1164,17 @@ class SkylineSecurityMod(loader.Module):
                 ),
             )
             return
+
         if message.is_private:
             await utils.answer(message, self.strings("no_target"))
             return
+
         target = await self._client.get_entity(message.peer_id, exp=0)
+
         if not self._client.dispatcher.security.remove_rules("chat", target.id):
             await utils.answer(message, self.strings("no_rules"))
             return
+
         await utils.answer(
             message,
             self.strings("rules_removed").format(
@@ -1037,9 +1182,11 @@ class SkylineSecurityMod(loader.Module):
                 utils.escape_html(get_display_name(target)),
             ),
         )
+
     @loader.command()
     async def tsec(self, message: Message):
         if not (args := utils.get_args(message)):
+
             await utils.answer(
                 message,
                 self.strings("rules").format(
@@ -1090,7 +1237,9 @@ class SkylineSecurityMod(loader.Module):
                 ),
             )
             return
+
         if args[0] not in {"user", "chat", "sgroup"}:
             await utils.answer(message, self.strings("what"))
             return
+
         await getattr(self, f"_tsec_{args[0]}")(message, args)

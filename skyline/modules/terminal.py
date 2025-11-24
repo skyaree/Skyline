@@ -1,3 +1,10 @@
+
+
+
+
+
+
+
 import asyncio
 import contextlib
 import logging
@@ -5,28 +12,42 @@ import os
 import re
 import typing
 import signal
+
 import skylinetl
+
 from .. import loader, utils
+
 logger = logging.getLogger(__name__)
+
+
 def hash_msg(message):
     return f"{str(utils.get_chat_id(message))}/{str(message.id)}"
+
 async def read_stream(func: callable, stream, delay: float):
     last_task = None
     data = b""
     while True:
         dat = await stream.read(1)
+
         if not dat:
             if last_task:
                 last_task.cancel()
                 await func(data.decode())
             break
+
         data += dat
+
         if last_task:
             last_task.cancel()
+
         last_task = asyncio.ensure_future(sleep_for_task(func, data, delay))
+
+
 async def sleep_for_task(func: callable, data: bytes, delay: float):
     await asyncio.sleep(delay)
     await func(data.decode())
+
+
 class MessageEditor:
     def __init__(
         self,
@@ -45,45 +66,58 @@ class MessageEditor:
         self.config = config
         self.strings = strings
         self.request_message = request_message
+
     async def update_stdout(self, stdout):
         self.stdout = stdout
         await self.redraw()
+
     async def update_stderr(self, stderr):
         self.stderr = stderr
         await self.redraw()
+
     async def redraw(self):
         text = self.strings("running").format(utils.escape_html(self.command))  # fmt: skip
+
         if self.rc is not None:
             text += self.strings("finished").format(utils.escape_html(str(self.rc)))
+
         text += self.strings("stdout")
         text += utils.escape_html(self.stdout[max(len(self.stdout) - 2048, 0) :])
         stderr = utils.escape_html(self.stderr[max(len(self.stderr) - 1024, 0) :])
         text += (self.strings("stderr") + stderr) if stderr else ""
         text += self.strings("end")
+
         with contextlib.suppress(skylinetl.errors.rpcerrorlist.MessageNotModifiedError):
             try:
                 self.message = await utils.answer(self.message, text)
             except skylinetl.errors.rpcerrorlist.MessageTooLongError as e:
                 logger.error(e)
                 logger.error(text)
+
     async def cmd_ended(self, rc):
         self.rc = rc
         self.state = 4
         await self.redraw()
+
     def update_process(self, process):
         pass
+
+
 class SudoMessageEditor(MessageEditor):
     PASS_REQ = ["[sudo] password for", "[sudo] пароль для"]
     WRONG_PASS = [r"\[sudo\] password for (.*): Sorry, try again\.", r"\[sudo\] пароль для (.*): Попробуйте еще раз.\."]
     TOO_MANY_TRIES = [r"\[sudo\] password for (.*): sudo: [0-9]+ incorrect password attempts", r"\[sudo\] пароль для (.*): sudo: [0-9]+ неверные попытки ввода пароля"]  # fmt: skip
+
     def __init__(self, message, command, config, strings, request_message):
         super().__init__(message, command, config, strings, request_message)
         self.process = None
         self.state = 0
         self.authmsg = None
+
     def update_process(self, process):
         logger.debug("got sproc obj %s", process)
         self.process = process
+
     async def update_stderr(self, stderr):
         logger.debug("stderr update " + stderr)
         self.stderr = stderr
@@ -91,6 +125,7 @@ class SudoMessageEditor(MessageEditor):
         lastline = lines[-1]
         lastlines = lastline.rsplit(" ", 1)
         handled = False
+
         if (
             len(lines) > 1
             and any(re.fullmatch(i, lines[-2]) for i in self.WRONG_PASS)
@@ -104,28 +139,35 @@ class SudoMessageEditor(MessageEditor):
             await asyncio.sleep(2)
             if self.authmsg:
                 await self.authmsg.delete()
+
         if any(lastlines[0] == i for i in self.PASS_REQ) and self.state == 0:
             logger.debug("Success to find sudo log!")
             text = self.strings("auth_needed").format(self.message.client.skyline_me.id)
+
             try:
                 await utils.answer(self.message, text)
             except skylinetl.errors.rpcerrorlist.MessageNotModifiedError as e:
                 logger.debug(e)
+
             logger.debug("edited message with link to self")
             command = "<code>" + utils.escape_html(self.command) + "</code>"
             user = utils.escape_html(lastlines[1][:-1])
+
             self.authmsg = await self.message.client.send_message(
                 "me",
                 self.strings("auth_msg").format(command, user),
             )
             logger.debug("sent message to self")
+
             self.message.client.remove_event_handler(self.on_message_edited)
             self.message.client.add_event_handler(
                 self.on_message_edited,
                 skylinetl.events.messageedited.MessageEdited(chats=["me"]),
             )
+
             logger.debug("registered handler")
             handled = True
+
         if len(lines) > 1 and (
             any(re.fullmatch(i, lastline) for i in self.TOO_MANY_TRIES) and self.state in {1, 3, 4}
         ):
@@ -134,6 +176,7 @@ class SudoMessageEditor(MessageEditor):
             await self.authmsg.delete()
             self.state = 2
             handled = True
+
         if not handled:
             logger.debug("Didn't find sudo log.")
             if self.authmsg is not None:
@@ -141,28 +184,39 @@ class SudoMessageEditor(MessageEditor):
                 self.authmsg = None
             self.state = 2
             await self.redraw()
+
         logger.debug(self.state)
+
     async def update_stdout(self, stdout):
         self.stdout = stdout
+
         if self.state != 2:
             self.state = 3  # Means that we got stdout only
+
         if self.authmsg is not None:
             await self.authmsg.delete()
             self.authmsg = None
+
         await self.redraw()
+
     async def on_message_edited(self, message):
         if self.authmsg is None:
             return
+
         logger.debug("got message edit update in self %s", str(message.id))
+
         if hash_msg(message) == hash_msg(self.authmsg):
             try:
                 self.authmsg = await utils.answer(message, self.strings("auth_ongoing"))
             except skylinetl.errors.rpcerrorlist.MessageNotModifiedError:
                 await message.delete()
+
             self.state = 1
             self.process.stdin.write(
                 message.message.message.split("\n", 1)[0].encode() + b"\n"
             )
+
+
 class RawMessageEditor(SudoMessageEditor):
     def __init__(
         self,
@@ -175,8 +229,10 @@ class RawMessageEditor(SudoMessageEditor):
     ):
         super().__init__(message, command, config, strings, request_message)
         self.show_done = show_done
+
     async def redraw(self):
         logger.debug(self.rc)
+
         if self.rc is None:
             text = (
                 "<code>"
@@ -195,9 +251,12 @@ class RawMessageEditor(SudoMessageEditor):
                 + utils.escape_html(self.stderr[max(len(self.stderr) - 4095, 0) :])
                 + "</code>"
             )
+
         if self.rc is not None and self.show_done:
             text += "\n" + self.strings("done")
+
         logger.debug(text)
+
         with contextlib.suppress(
             skylinetl.errors.rpcerrorlist.MessageNotModifiedError,
             skylinetl.errors.rpcerrorlist.MessageEmptyError,
@@ -208,10 +267,14 @@ class RawMessageEditor(SudoMessageEditor):
             except skylinetl.errors.rpcerrorlist.MessageTooLongError as e:
                 logger.error(e)
                 logger.error(text)
+
+
 @loader.tds
 class TerminalMod(loader.Module):
     """Runs commands"""
+
     strings = {"name": "Terminal"}
+
     def __init__(self):
         self.config = loader.ModuleConfig(
             loader.ConfigValue(
@@ -222,9 +285,12 @@ class TerminalMod(loader.Module):
             ),
         )
         self.activecmds = {}
+
     @loader.command()
     async def terminalcmd(self, message):
         await self.run_command(message, utils.get_args_raw(message))
+        
+
     async def run_command(
         self,
         message: skylinetl.tl.types.Message,
@@ -233,13 +299,17 @@ class TerminalMod(loader.Module):
     ):
         if len(cmd.split(" ")) > 1 and cmd.split(" ")[0] == "sudo":
             needsswitch = True
+
             for word in cmd.split(" ", 1)[1].split(" "):
                 if word[0] != "-":
                     break
+
                 if word == "-S":
                     needsswitch = False
+
             if needsswitch:
                 cmd = " ".join([cmd.split(" ", 1)[0], "-S", cmd.split(" ", 1)[1]])
+
         sproc = await asyncio.create_subprocess_exec(
             "/bin/bash", "-c", cmd,
             stdin=asyncio.subprocess.PIPE,
@@ -248,11 +318,16 @@ class TerminalMod(loader.Module):
             cwd=utils.get_base_dir(),
             preexec_fn=os.setsid,
         )
+
         if editor is None:
             editor = SudoMessageEditor(message, cmd, self.config, self.strings, message)
+
         editor.update_process(sproc)
+
         self.activecmds[hash_msg(message)] = sproc
+
         await editor.redraw()
+
         await asyncio.gather(
             read_stream(
                 editor.update_stdout,
@@ -265,13 +340,16 @@ class TerminalMod(loader.Module):
                 self.config["FLOOD_WAIT_PROTECT"],
             ),
         )
+
         await editor.cmd_ended(await sproc.wait())
         del self.activecmds[hash_msg(message)]
+
     @loader.command()
     async def terminatecmd(self, message):
         if not message.is_reply:
             await utils.answer(message, self.strings("what_to_kill"))
             return
+
         if hash_msg(await message.get_reply_message()) in self.activecmds:
             try:
                 kill_pids = self.activecmds[hash_msg(await message.get_reply_message())] 

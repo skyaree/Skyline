@@ -1,3 +1,5 @@
+
+
 import asyncio
 import atexit as _atexit
 import contextlib
@@ -6,6 +8,7 @@ import logging
 import random
 import signal
 import typing
+
 import skylinetl
 from skylinetl import hints
 from skylinetl.tl.functions.channels import (
@@ -15,10 +18,14 @@ from skylinetl.tl.functions.channels import (
 from skylinetl.tl.types import (
     ChatAdminRights,
 )
+
 from ..tl_cache import CustomTelegramClient
 from ..types import ListLike
+
 parser = skylinetl.utils.sanitize_parse_mode("html")
 logger = logging.getLogger(__name__)
+
+
 def rand(size: int, /) -> str:
     """
     Return random string of len `size`
@@ -28,6 +35,7 @@ def rand(size: int, /) -> str:
     return "".join(
         [random.choice("abcdefghijklmnopqrstuvwxyz1234567890") for _ in range(size)]
     )
+
 async def invite_inline_bot(
     client: CustomTelegramClient,
     peer: hints.EntityLike,
@@ -39,12 +47,14 @@ async def invite_inline_bot(
     :return: None
     :raise RuntimeError: If error occurred while inviting bot
     """
+
     try:
         await client(InviteToChannelRequest(peer, [client.loader.inline.bot_username]))
     except Exception as e:
         raise RuntimeError(
             "Can't invite inline bot to old asset chat, which is required by module"
         ) from e
+
     with contextlib.suppress(Exception):
         await client(
             EditAdminRequest(
@@ -54,6 +64,8 @@ async def invite_inline_bot(
                 rank="Skyline",
             )
         )
+
+
 def run_sync(func, *args, **kwargs):
     """
     Run a non-async function in a new thread and return an awaitable
@@ -64,6 +76,8 @@ def run_sync(func, *args, **kwargs):
         None,
         functools.partial(func, *args, **kwargs),
     )
+
+
 def run_async(loop: asyncio.AbstractEventLoop, coro: typing.Awaitable) -> typing.Any:
     """
     Run an async function as a non-async function, blocking till it's done
@@ -72,6 +86,7 @@ def run_async(loop: asyncio.AbstractEventLoop, coro: typing.Awaitable) -> typing
     :return: Result of the coroutine
     """
     return asyncio.run_coroutine_threadsafe(coro, loop).result()
+
 def merge(a: dict, b: dict, /) -> dict:
     """
     Merge with replace dictionary a to dictionary b
@@ -87,8 +102,11 @@ def merge(a: dict, b: dict, /) -> dict:
                 b[key] = list(set(b[key] + a[key]))
             else:
                 b[key] = a[key]
+
         b[key] = a[key]
+
     return b
+
 def chunks(_list: ListLike, n: int, /) -> typing.List[typing.List[typing.Any]]:
     """
     Split provided `_list` into chunks of `n`
@@ -97,6 +115,7 @@ def chunks(_list: ListLike, n: int, /) -> typing.List[typing.List[typing.Any]]:
     :return: List of chunks
     """
     return [_list[i : i + n] for i in range(0, len(_list), n)]
+
 def atexit(
     func: typing.Callable,
     use_signal: typing.Optional[int] = None,
@@ -114,7 +133,9 @@ def atexit(
     if use_signal:
         signal.signal(use_signal, lambda *_: func(*args, **kwargs))
         return
+
     _atexit.register(functools.partial(func, *args, **kwargs))
+
 def _copy_tl(o, **kwargs):
     d = o.to_dict()
     del d["_"]

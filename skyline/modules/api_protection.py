@@ -1,3 +1,5 @@
+
+
 import asyncio
 import io
 import json
@@ -5,14 +7,18 @@ import logging
 import random
 import time
 import typing
+
 from skylinetl.tl import functions
 from skylinetl.tl.tlobject import TLRequest
 from skylinetl.tl.types import Message
 from skylinetl.utils import is_list_like
+
 from .. import loader, utils
 from ..inline.types import InlineCall
 from ..web.debugger import WebDebugger
+
 logger = logging.getLogger(__name__)
+
 GROUPS = [
     "auth",
     "account",
@@ -32,6 +38,8 @@ GROUPS = [
     "folders",
     "stats",
 ]
+
+
 CONSTRUCTORS = {
     (entity_name[0].lower() + entity_name[1:]).rsplit("Request", 1)[0]: getattr(cur_entity, "CONSTRUCTOR_ID")
     for group in GROUPS
@@ -40,10 +48,14 @@ CONSTRUCTORS = {
        and TLRequest in cur_entity.__bases__ 
        and hasattr(cur_entity, "CONSTRUCTOR_ID")
 }
+
+
 @loader.tds
 class APIRatelimiterMod(loader.Module):
     """Helps userbot avoid spamming Telegram API"""
+
     strings = {"name": "APILimiter"}
+
     def __init__(self):
         self._ratelimiter: typing.List[tuple] = []
         self._suspend_until = 0
@@ -81,15 +93,20 @@ class APIRatelimiterMod(loader.Module):
                 on_change=self.on_forbidden_methods_update
             ),
         )
+
     async def client_ready(self):
         asyncio.ensure_future(self._install_protection())
+    
     async def on_forbidden_methods_update(self):
         self._client.forbid_constructors(list(map(lambda x: CONSTRUCTORS[x], self.config['forbidden_methods'], )))
+
     async def _install_protection(self):
         await asyncio.sleep(30)  # Restart lock
         if hasattr(self._client._call, "_old_call_rewritten"):
             raise loader.SelfUnload("Already installed")
+
         old_call = self._client._call
+
         async def new_call(
             sender: "MTProtoSender",  # type: ignore  # noqa: F821
             request: TLRequest,
@@ -112,6 +129,7 @@ class APIRatelimiterMod(loader.Module):
                 ):
                     request_name = type(r).__name__
                     self._ratelimiter += [(request_name, time.perf_counter())]
+
                     self._ratelimiter = list(
                         filter(
                             lambda x: time.perf_counter() - x[1]
@@ -119,6 +137,7 @@ class APIRatelimiterMod(loader.Module):
                             self._ratelimiter,
                         )
                     )
+
                     if (
                         len(self._ratelimiter) > int(self.config["threshold"])
                         and not self._lock
@@ -131,6 +150,7 @@ class APIRatelimiterMod(loader.Module):
                             ).encode()
                         )
                         report.name = "local_fw_report.json"
+
                         await self.inline.bot.send_document(
                             self.tg_id,
                             report,
@@ -141,25 +161,32 @@ class APIRatelimiterMod(loader.Module):
                                 )
                             ),
                         )
+
                         time.sleep(int(self.config["local_floodwait"]))
                         self._lock = False
+
             return await old_call(sender, request, ordered, flood_sleep_threshold)
+
         self._client._call = new_call
         self._client._old_call_rewritten = old_call
         self._client._call._skyline_overwritten = True
         logger.debug("Successfully installed ratelimiter")
+
     async def on_unload(self):
         if hasattr(self._client, "_old_call_rewritten"):
             self._client._call = self._client._old_call_rewritten
             delattr(self._client, "_old_call_rewritten")
             logger.debug("Successfully uninstalled ratelimiter")
+
     @loader.command()
     async def suspend_api_protect(self, message: Message):
         if not (args := utils.get_args_raw(message)) or not args.isdigit():
             await utils.answer(message, self.strings("args_invalid"))
             return
+
         self._suspend_until = time.perf_counter() + int(args)
         await utils.answer(message, self.strings("suspended_for").format(args))
+
     @loader.command()
     async def api_fw_protection(self, message: Message):
         await self.inline.form(
@@ -170,16 +197,20 @@ class APIRatelimiterMod(loader.Module):
                 {"text": self.strings("btn_yes"), "callback": self._finish},
             ],
         )
+
     @property
     def _debugger(self) -> WebDebugger:
         return logging.getLogger().handlers[0].web_debugger
+
     async def _show_pin(self, call: InlineCall):
         self.inline.bot(await call.answer(f"Werkzeug PIN: {self._debugger.pin}", show_alert=True))
+
     @loader.command()
     async def debugger(self, message: Message):
         if not self._debugger:
             await utils.answer(message, self.strings("debugger_disabled"))
             return
+
         await self.inline.form(
             message=message,
             text=self.strings("web_pin"),
@@ -199,6 +230,7 @@ class APIRatelimiterMod(loader.Module):
                 ],
             ],
         )
+
     async def _finish(self, call: InlineCall):
         state = self.get("disable_protection", True)
         self.set("disable_protection", not state)

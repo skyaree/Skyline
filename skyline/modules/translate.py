@@ -1,11 +1,20 @@
+
+
 import logging
+
 from skylinetl.tl.types import Message
+
 from .. import loader, utils
+
 logger = logging.getLogger(__name__)
+
+
 @loader.tds
 class Translator(loader.Module):
     """Translates text (obviously)"""
+
     strings = {"name": "Translator"}
+
     @loader.command()
     async def tr(self, message: Message):
         if not (args := utils.get_args_raw(message)):
@@ -21,14 +30,17 @@ class Translator(loader.Module):
                     text = args.split(maxsplit=1)[1]
                 except IndexError:
                     text = None
+
         if not text:
             if not (reply := await message.get_reply_message()):
                 await utils.answer(message, self.strings("no_args"))
                 return
+
             text = reply.raw_text
             entities = reply.entities
         else:
             entities = []
+
         try:
             await utils.answer(
                 message,
@@ -43,3 +55,4 @@ class Translator(loader.Module):
         except Exception:
             logger.exception("Unable to translate text")
             await utils.answer(message, self.strings("error"))
+

@@ -1,9 +1,13 @@
+
 import logging
 import typing
+
 import git
 import skylinetl
+
 parser = skylinetl.utils.sanitize_parse_mode("html")
 logger = logging.getLogger(__name__)
+
 def get_git_info() -> typing.Tuple[str, str]:
     """
     Get git info
@@ -14,6 +18,7 @@ def get_git_info() -> typing.Tuple[str, str]:
         hash_,
         f"https://github.com/coddrago/Skyline/commit/{hash_}" if hash_ else "",
     )
+
 def get_git_hash() -> typing.Union[str, bool]:
     """
     Get current Skyline git hash
@@ -23,6 +28,8 @@ def get_git_hash() -> typing.Union[str, bool]:
         return git.Repo().head.commit.hexsha
     except Exception:
         return False
+
+
 def get_commit_url() -> str:
     """
     Get current Skyline git commit url

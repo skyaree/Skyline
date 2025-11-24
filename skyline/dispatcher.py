@@ -1,4 +1,11 @@
 """Processes incoming events and dispatches them to appropriate handlers"""
+
+
+
+
+
+
+
 import asyncio
 import collections
 import contextlib
@@ -9,15 +16,19 @@ import re
 import sys
 import traceback
 import typing
+
 import requests
 from skylinetl import events
 from skylinetl.errors import FloodWaitError, RPCError
 from skylinetl.tl.types import Message
+
 from . import main, security, utils
 from .database import Database
 from .loader import Modules
 from .tl_cache import CustomTelegramClient
+
 logger = logging.getLogger(__name__)
+
 ru_keys = 'ёйцукенгшщзхъфывапролджэячсмитьбю.Ё"№;%:?ЙЦУКЕНГШЩЗХЪФЫВАПРОЛДЖЭ/ЯЧСМИТЬБЮ,'
 en_keys = "`qwertyuiop[]asdfghjkl;'zxcvbnm,./~@#$%^&QWERTYUIOP{}ASDFGHJKL:\"|ZXCVBNM<>?"
 ALL_TAGS = [
@@ -64,10 +75,15 @@ ALL_TAGS = [
     "alias",
     "aliases",
 ]
+
+
 def _decrement_ratelimit(delay, data, key, severity):
     def inner():
         data[key] = max(0, data[key] - severity)
+
     asyncio.get_event_loop().call_later(delay, inner)
+
+
 class CommandDispatcher:
     def __init__(
         self,
@@ -79,11 +95,14 @@ class CommandDispatcher:
         self._client = client
         self.client = client
         self._db = db
+
         self._ratelimit_storage_user = collections.defaultdict(int)
         self._ratelimit_storage_chat = collections.defaultdict(int)
         self._ratelimit_max_user = db.get(__name__, "ratelimit_max_user", 30)
         self._ratelimit_max_chat = db.get(__name__, "ratelimit_max_chat", 100)
+
         self.security = security.SecurityManager(client, db)
+
         self.check_security = self.security.check
         self._me = self._client.skyline_me.id
         self._cached_usernames = [
@@ -93,20 +112,26 @@ class CommandDispatcher:
                 else str(self._client.skyline_me.id)
             )
         ]
+
         self._cached_usernames.extend(
             u.username.lower()
             for u in getattr(self._client.skyline_me, "usernames", [])
             or []
         )
+
         self.raw_handlers = []
         self._external_bl: typing.List[int] = []
+
         asyncio.ensure_future(self._external_bl_reload_loop())
+
     async def _handle_ratelimit(self, message: Message, func: callable) -> bool:
         if await self.security.check(message, security.OWNER):
             return True
+
         func = getattr(func, "__func__", func)
         ret = True
         chat = self._ratelimit_storage_chat[message.chat_id]
+
         if message.sender_id:
             user = self._ratelimit_storage_user[message.sender_id]
             severity = (5 if getattr(func, "ratelimit", False) else 2) * (
@@ -118,6 +143,7 @@ class CommandDispatcher:
                 ret = False
             else:
                 self._ratelimit_storage_chat[message.chat_id] = chat
+
             _decrement_ratelimit(
                 self._ratelimit_max_user * severity,
                 self._ratelimit_storage_user,
@@ -128,41 +154,54 @@ class CommandDispatcher:
             severity = (5 if getattr(func, "ratelimit", False) else 2) * (
                 chat // 15 + 1
             )
+
         chat += severity
+
         if chat > self._ratelimit_max_chat:
             ret = False
+
         _decrement_ratelimit(
             self._ratelimit_max_chat * severity,
             self._ratelimit_storage_chat,
             message.chat_id,
             severity,
         )
+
         return ret
+
     def _handle_grep(self, message: Message) -> Message:
         if "||grep" in message.text or "|| grep" in message.text:
             message.raw_text = re.sub(r"\|\| ?grep", "| grep", message.raw_text)
             message.text = re.sub(r"\|\| ?grep", "| grep", message.text)
             message.message = re.sub(r"\|\| ?grep", "| grep", message.message)
             return message
+
         grep = False
         if not re.search(r".+\| ?grep (.+)", message.raw_text):
             return message
+
         grep = re.search(r".+\| ?grep (.+)", message.raw_text).group(1)
         message.text = re.sub(r"\| ?grep.+", "", message.text)
         message.raw_text = re.sub(r"\| ?grep.+", "", message.raw_text)
         message.message = re.sub(r"\| ?grep.+", "", message.message)
+
         ungrep = False
+
         if re.search(r"-v (.+)", grep):
             ungrep = re.search(r"-v (.+)", grep).group(1)
             grep = re.sub(r"(.+) -v .+", r"\g<1>", grep)
+
         grep = utils.escape_html(grep).strip() if grep else False
         ungrep = utils.escape_html(ungrep).strip() if ungrep else False
+
         old_edit = message.edit
         old_reply = message.reply
         old_respond = message.respond
+
         def process_text(text: str) -> str:
             nonlocal grep, ungrep
             res = []
+
             for line in text.split("\n"):
                 if (
                     grep
@@ -174,36 +213,46 @@ class CommandDispatcher:
                             grep, f"<u>{grep}</u>"
                         )
                     )
+
                 if not grep and ungrep and ungrep not in utils.remove_html(line):
                     res.append(utils.remove_html(line, escape=True))
+
             cont = (
                 (f"contain <b>{grep}</b>" if grep else "")
                 + (" and" if grep and ungrep else "")
                 + ((" do not contain <b>" + ungrep + "</b>") if ungrep else "")
             )
+
             if res:
                 text = f"<i>💬 Lines that {cont}:</i>\n" + "\n".join(res)
             else:
                 text = f"💬 <i>No lines that {cont}</i>"
+
             return text
+
         async def my_edit(text, *args, **kwargs):
             text = process_text(text)
             kwargs["parse_mode"] = "HTML"
             return await old_edit(text, *args, **kwargs)
+
         async def my_reply(text, *args, **kwargs):
             text = process_text(text)
             kwargs["parse_mode"] = "HTML"
             return await old_reply(text, *args, **kwargs)
+
         async def my_respond(text, *args, **kwargs):
             text = process_text(text)
             kwargs["parse_mode"] = "HTML"
             kwargs.setdefault("reply_to", utils.get_topic(message))
             return await old_respond(text, *args, **kwargs)
+
         message.edit = my_edit
         message.reply = my_reply
         message.respond = my_respond
         message.skyline_grepped = True
+
         return message
+
     async def _handle_command(
         self,
         event: typing.Union[events.NewMessage, events.MessageDeleted],
@@ -211,17 +260,22 @@ class CommandDispatcher:
     ) -> typing.Union[bool, typing.Tuple[Message, str, str, callable]]:
         if not hasattr(event, "message") or not hasattr(event.message, "message"):
             return False
+
         initiator = getattr(event, "sender_id", 0)
+
         main_prefix = self._db.get(main.__name__, "command_prefix", ".")
         if initiator == self._client.tg_id:
             prefix = main_prefix
         else:
             prefix = self._db.get(main.__name__, "command_prefixes", {})
             prefix = prefix.get(str(initiator), main_prefix)
+            
         change = str.maketrans(ru_keys + en_keys, en_keys + ru_keys)
         message = utils.censor(event.message)
+
         if not event.message.message:
             return False
+
         if (
             message.out
             and len(message.message) > len(prefix) * 2
@@ -242,6 +296,7 @@ class CommandDispatcher:
                     ),
                 )
             return False
+
         if (
             event.message.message.startswith(str.translate(prefix, change))
             and str.translate(prefix, change) != prefix
@@ -250,6 +305,7 @@ class CommandDispatcher:
             message.text = str.translate(message.text, change)
         elif not event.message.message.startswith(prefix):
             return False
+
         if (
             event.sticker
             or event.dice
@@ -258,19 +314,26 @@ class CommandDispatcher:
             or getattr(event, "reactions", False)
         ):
             return False
+
         blacklist_chats = self._db.get(main.__name__, "blacklist_chats", [])
         whitelist_chats = self._db.get(main.__name__, "whitelist_chats", [])
         whitelist_modules = self._db.get(main.__name__, "whitelist_modules", [])
+
+
         if (
             (chat_id := utils.get_chat_id(message)) in self._external_bl
             or chat_id in blacklist_chats
             or (whitelist_chats and chat_id not in whitelist_chats)
         ):
             return False
+
         if not message.message or len(message.message) == len(prefix):
             return False  # Message is just the prefix
+
+
         command = message.message[len(prefix):].strip().split(maxsplit=1)[0]
         tag = command.split("@", maxsplit=1)
+
         if len(tag) == 2:
             if tag[1] == "me":
                 if not message.out:
@@ -298,7 +361,9 @@ class CommandDispatcher:
             not in self._db.get(main.__name__, "nonickchats", [])
         ):
             return False
+
         txt, func = self._modules.dispatch(tag[0])
+
         if (
             not func
             or not await self._handle_ratelimit(message, func)
@@ -309,6 +374,7 @@ class CommandDispatcher:
             )
         ):
             return False
+
         if message.is_channel and message.edit_date and not message.is_group:
             async for event in self._client.iter_admin_log(
                 chat_id,
@@ -319,20 +385,28 @@ class CommandDispatcher:
                     if event.user_id != self._client.tg_id:
                         logger.debug("Ignoring edit in channel")
                         return False
+
                     break
+            
             return False
+
         message.message = prefix + txt + message.message[len(prefix + command) :]
+
         if (
             f"{str(chat_id)}.{func.__self__.__module__}" in blacklist_chats
             or whitelist_modules
             and f"{chat_id}.{func.__self__.__module__}" not in whitelist_modules
         ):
             return False
+
         if await self._handle_tags(event, func):
             return False
+
         if self._db.get(main.__name__, "grep", False) and not watcher:
             message = self._handle_grep(message)
+
         return message, prefix, txt, func
+
     async def handle_raw(self, event: events.Raw):
         """Handle raw events."""
         for handler in self.raw_handlers:
@@ -341,6 +415,7 @@ class CommandDispatcher:
                     await handler(event)
                 except Exception as e:
                     logger.exception("Error in raw handler %s: %s", handler.id, e)
+
     async def handle_command(
         self,
         event: typing.Union[events.NewMessage, events.MessageDeleted],
@@ -349,7 +424,9 @@ class CommandDispatcher:
         message = await self._handle_command(event)
         if not message:
             return
+
         message, _, _, func = message
+
         asyncio.ensure_future(
             self.future_dispatcher(
                 func,
@@ -357,6 +434,7 @@ class CommandDispatcher:
                 self.command_exc,
             )
         )
+
     async def command_exc(self, _, message: Message):
         """Handle command exceptions."""
         exc = sys.exc_info()[1]
@@ -409,16 +487,20 @@ class CommandDispatcher:
                     " failed!</b>\n\n<b>🧾 Logs:</b>\n<pre><code"
                     f' class="language-logs">{utils.escape_html(exc)}</code></pre>'
                 )
+
         with contextlib.suppress(Exception):
             await (message.edit if message.out else message.reply)(txt)
+
     async def watcher_exc(self, *_):
         logger.exception("Error running watcher", extra={"stack": inspect.stack()})
+
     async def _handle_tags(
         self,
         event: typing.Union[events.NewMessage, events.MessageDeleted],
         func: callable,
     ) -> bool:
         return bool(await self._handle_tags_ext(event, func))
+
     async def _handle_tags_ext(
         self,
         event: typing.Union[events.NewMessage, events.MessageDeleted],
@@ -431,6 +513,7 @@ class CommandDispatcher:
         :return: The reason for the tag to fail.
         """
         m = event if isinstance(event, Message) else getattr(event, "message", event)
+
         reverse_mapping = {
             "out": lambda: getattr(m, "out", True),
             "in": lambda: not getattr(m, "out", True),
@@ -498,6 +581,7 @@ class CommandDispatcher:
                 isinstance(m, Message) and re.search(func.regex, m.raw_text)
             ),
         }
+
         return (
             "no_commands"
             if getattr(func, "no_commands", False)
@@ -518,15 +602,19 @@ class CommandDispatcher:
                 )
             )
         )
+
     async def handle_incoming(
         self,
         event: typing.Union[events.NewMessage, events.MessageDeleted],
     ):
         """Handle all incoming messages"""
         message = utils.censor(getattr(event, "message", event))
+
         blacklist_chats = self._db.get(main.__name__, "blacklist_chats", [])
         whitelist_chats = self._db.get(main.__name__, "whitelist_chats", [])
         whitelist_modules = self._db.get(main.__name__, "whitelist_modules", [])
+
+
         if (
             (chat_id := utils.get_chat_id(message)) in self._external_bl
             or chat_id in blacklist_chats
@@ -534,9 +622,11 @@ class CommandDispatcher:
         ):
             logger.debug("Message is blacklisted")
             return
+
         for func in self._modules.watchers:
             bl = self._db.get(main.__name__, "disabled_watchers", {})
             modname = str(func.__self__.__class__.strings["name"])
+
             if (
                 modname in bl
                 and isinstance(message, Message)
@@ -559,12 +649,14 @@ class CommandDispatcher:
                 or await self._handle_tags(event, func)
             ):
                 continue
+
             for placeholder in {"text", "raw_text", "out"}:
                 try:
                     if not hasattr(message, placeholder):
                         setattr(message, placeholder, "")
                 except UnicodeDecodeError:
                     pass
+
             asyncio.ensure_future(
                 self.future_dispatcher(
                     func,
@@ -572,6 +664,7 @@ class CommandDispatcher:
                     self.watcher_exc,
                 )
             )
+
     async def future_dispatcher(
         self,
         func: callable,
@@ -584,6 +677,7 @@ class CommandDispatcher:
             await func(message)
         except Exception as e:
             await exception_handler(e, message, *args)
+
     async def _external_bl_reload_loop(self):
         while True:
             with contextlib.suppress(Exception):
@@ -593,4 +687,5 @@ class CommandDispatcher:
                         "https://ubguard.codrago.life/blacklist.json",
                     )
                 ).json()["blacklist"]
+
             await asyncio.sleep(60)

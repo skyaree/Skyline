@@ -1,9 +1,12 @@
+
+
 import contextlib
 import io
 import json
 import logging
 import re
 import typing
+
 import grapheme
 import skylinetl
 from skylinetl.tl.types import (
@@ -15,10 +18,15 @@ from skylinetl.tl.types import (
     MessageMediaDocument,
     MessageMediaWebPage,
 )
+
 from .other import _copy_tl
 from .entity import get_chat_id, FormattingEntity
+
 from ..inline.types import BotInlineCall, InlineCall, InlineMessage
 from ..types import SkylineReplyMarkup, ListLike
+
+
+
 emoji_pattern = re.compile(
     "["
     "\U0001f600-\U0001f64f"  # emoticons
@@ -28,8 +36,10 @@ emoji_pattern = re.compile(
     "]+",
     flags=re.UNICODE,
 )
+
 parser = skylinetl.utils.sanitize_parse_mode("html")
 logger = logging.getLogger(__name__)
+
 def get_topic(message: Message) -> typing.Optional[int]:
     """
     Get topic id of message
@@ -49,6 +59,7 @@ def get_topic(message: Message) -> typing.Optional[int]:
             else None
         )
     )
+
 def mime_type(message: Message) -> str:
     """
     Get mime type of document in message
@@ -60,6 +71,7 @@ def mime_type(message: Message) -> str:
         if not isinstance(message, Message) or not getattr(message, "media", False)
         else getattr(getattr(message, "media", False), "mime_type", False) or ""
     )
+
 async def get_message_link(
     message: Message,
     chat: typing.Optional[typing.Union[Chat, Channel]] = None,
@@ -74,18 +86,23 @@ async def get_message_link(
         return (
             f"tg://openmessage?user_id={get_chat_id(message)}&message_id={message.id}"
         )
+
     if not chat and not (chat := message.chat):
         chat = await message.get_chat()
+
     topic_affix = (
         f"?topic={message.reply_to.reply_to_msg_id}"
         if getattr(message.reply_to, "forum_topic", False)
         else ""
     )
+
     return (
         f"https://t.me/{chat.username}/{message.id}{topic_affix}"
         if getattr(chat, "username", False)
         else f"https://t.me/c/{chat.id}/{message.id}{topic_affix}"
     )
+
+
 def smart_split(
     text: str,
     entities: typing.List[FormattingEntity],
@@ -103,6 +120,7 @@ def smart_split(
     :param split_on: characters (or strings) which are preferred for a message break
     :param min_length: ignore any matches on [split_on] strings before this number of characters into each message
     :return: iterator, which returns strings
+
     :example:
         >>> utils.smart_split(
             *skylinetl.extensions.html.parse(
@@ -111,12 +129,15 @@ def smart_split(
         )
         <<< ["<b>Hello, world!</b>"]
     """
+
+
     encoded = text.encode("utf-16le")
     pending_entities = entities
     text_offset = 0
     bytes_offset = 0
     text_length = len(text)
     bytes_length = len(encoded)
+
     while text_offset < text_length:
         if bytes_offset + length * 2 >= bytes_length:
             yield parser.unparse(
@@ -124,12 +145,14 @@ def smart_split(
                 list(sorted(pending_entities, key=lambda x: (x.offset, -x.length))),
             )
             break
+
         codepoint_count = len(
             encoded[bytes_offset : bytes_offset + length * 2].decode(
                 "utf-16le",
                 errors="ignore",
             )
         )
+
         for search in split_on:
             search_index = text.rfind(
                 search,
@@ -140,19 +163,24 @@ def smart_split(
                 break
         else:
             search_index = text_offset + codepoint_count
+
         split_index = grapheme.safe_split_index(text, search_index)
+
         split_offset_utf16 = (
             len(text[text_offset:split_index].encode("utf-16le"))
         ) // 2
         exclude = 0
+
         while (
             split_index + exclude < text_length
             and text[split_index + exclude] in split_on
         ):
             exclude += 1
+
         current_entities = []
         entities = pending_entities.copy()
         pending_entities = []
+
         for entity in entities:
             if (
                 entity.offset < split_offset_utf16
@@ -205,13 +233,17 @@ def smart_split(
                         offset=entity.offset - split_offset_utf16 - exclude,
                     )
                 )
+
         current_text = text[text_offset:split_index]
         yield parser.unparse(
             current_text,
             list(sorted(current_entities, key=lambda x: (x.offset, -x.length))),
         )
+
         text_offset = split_index + exclude
         bytes_offset += len(current_text.encode("utf-16le"))
+
+
 def array_sum(
     array: typing.List[typing.List[typing.Any]], /
 ) -> typing.List[typing.Any]:
@@ -223,7 +255,9 @@ def array_sum(
     result = []
     for item in array:
         result += item
+
     return result
+
 async def answer(
     message: typing.Union[Message, InlineCall, InlineMessage],
     response: str,
@@ -237,6 +271,7 @@ async def answer(
     :param response: Response to send
     :param reply_markup: Reply markup to send. If specified, inline form will be used
     :return: Message or inline object
+
     :example:
         >>> await utils.answer(message, "Hello world!")
         >>> await utils.answer(
@@ -253,16 +288,20 @@ async def answer(
             disable_security=True,
         )
     """
+
     if isinstance(message, list) and message:
         message = message[0]
+
     if reply_markup is not None:
         if not isinstance(reply_markup, (list, dict)):
             raise ValueError("reply_markup must be a list or dict")
+
         if reply_markup:
             kwargs.pop("message", None)
             if isinstance(message, (InlineMessage, InlineCall, BotInlineCall)):
                 await message.edit(response, reply_markup, **kwargs)
                 return
+
             reply_markup = message.client.loader.inline._normalize_markup(reply_markup)
             result = await message.client.loader.inline.form(
                 response,
@@ -271,10 +310,13 @@ async def answer(
                 **kwargs,
             )
             return result
+
     if isinstance(message, (InlineMessage, InlineCall, BotInlineCall)):
         await message.edit(response)
         return message
+
     kwargs.setdefault("link_preview", False)
+
     if not (edit := (message.out and not message.via_bot_id and not message.fwd_from)):
         kwargs.setdefault(
             "reply_to",
@@ -282,31 +324,40 @@ async def answer(
         )
     elif "reply_to" in kwargs:
         kwargs.pop("reply_to")
+
     parse_mode = skylinetl.utils.sanitize_parse_mode(
         kwargs.pop(
             "parse_mode",
             message.client.parse_mode,
         )
     )
+
     if isinstance(response, str) and not kwargs.pop("asfile", False):
         text, entities = parse_mode.parse(response)
+
         if len(text) >= 4096 and not hasattr(message, "skyline_grepped"):
             try:
                 if not message.client.loader.inline.init_complete:
                     raise
+
                 strings = list(smart_split(text, entities, 4096))
+
                 if len(strings) > 10:
                     raise
+
                 list_ = await message.client.loader.inline.list(
                     message=message,
                     strings=strings,
                 )
+
                 if not list_:
                     raise
+
                 return list_
             except Exception:
                 file = io.BytesIO(text.encode("utf-8"))
                 file.name = "command_result.txt"
+
                 result = await message.client.send_file(
                     message.peer_id,
                     file,
@@ -315,9 +366,12 @@ async def answer(
                     ),
                     reply_to=kwargs.get("reply_to") or get_topic(message),
                 )
+
                 if message.out:
                     await message.delete()
+
                 return result
+
         result = await (message.edit if edit else message.respond)(
             text,
             parse_mode=lambda t: (t, entities),
@@ -340,8 +394,10 @@ async def answer(
             response = io.BytesIO(response)
         elif isinstance(response, str):
             response = io.BytesIO(response.encode("utf-8"))
+
         if name := kwargs.pop("filename", None):
             response.name = name
+
         if message.media is not None and edit:
             await message.edit(file=response, **kwargs)
         else:
@@ -352,7 +408,10 @@ async def answer(
             result = await message.client.send_file(message.peer_id, response, **kwargs)
             if message.out:
                 await message.delete()
+
     return result
+
+
 async def answer_file(
     message: typing.Union[Message, InlineCall, InlineMessage],
     file: typing.Union[str, bytes, io.IOBase, InputDocument],
@@ -366,6 +425,7 @@ async def answer_file(
     :param caption: Caption to send
     :param kwargs: Extra kwargs to pass to `send_file`
     :return: Sent message
+
     :example:
         >>> await utils.answer_file(message, "test.txt")
         >>> await utils.answer_file(
@@ -376,8 +436,10 @@ async def answer_file(
     """
     if isinstance(message, (InlineCall, InlineMessage)):
         message = message.form["caller"]
+
     if topic := get_topic(message):
         kwargs.setdefault("reply_to", topic)
+
     try:
         response = await message.client.send_file(
             message.peer_id,
@@ -391,10 +453,14 @@ async def answer_file(
                 "Failed to send file, sending plain text instead", exc_info=True
             )
             return await answer(message, caption, **kwargs)
+
         raise
+
     with contextlib.suppress(Exception):
         await message.delete()
+
     return response
+
 def censor(
     obj: typing.Any,
     to_censor: typing.Optional[typing.Iterable[str]] = None,
@@ -409,12 +475,15 @@ def censor(
     """
     if to_censor is None:
         to_censor = ["phone"]
+
     for k, v in vars(obj).items():
         if k in to_censor:
             setattr(obj, k, replace_with.format(count=len(v)))
         elif k[0] != "_" and hasattr(v, "__dict__"):
             setattr(obj, k, censor(v, to_censor, replace_with))
+
     return obj
+
 def is_serializable(x: typing.Any, /) -> bool:
     """
     Checks if object is JSON-serializable

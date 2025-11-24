@@ -1,3 +1,6 @@
+
+
+
 import aiohttp
 import ast
 import asyncio
@@ -8,6 +11,7 @@ import subprocess
 import sys
 import time
 import typing
+
 import git
 from git import GitCommandError, Repo
 from skylinetl.extensions.html import CUSTOM_EMOJIS
@@ -16,14 +20,20 @@ from skylinetl.tl.functions.messages import (
     UpdateDialogFilterRequest,
 )
 from skylinetl.tl.types import DialogFilter, TextWithEntities, Message
+
 from .. import loader, main, utils, version
 from .._internal import restart
 from ..inline.types import InlineCall, BotInlineCall
+
 logger = logging.getLogger(__name__)
+
+
 @loader.tds
 class UpdaterMod(loader.Module):
     """Updates itself, tracks latest Skyline releases, and notifies you, if update is required"""
+
     strings = {"name": "Updater"}
+
     def __init__(self):
         self._notified = None
         self.config = loader.ModuleConfig(
@@ -45,6 +55,7 @@ class UpdaterMod(loader.Module):
                 validator=loader.validators.Boolean(),
             ),
         )
+
     async def _set_autoupdate_state(self, call: BotInlineCall, state: bool):
         self.set("autoupdate", True)
         if not state:
@@ -52,28 +63,37 @@ class UpdaterMod(loader.Module):
             await self.inline.bot(call.answer(self.strings("autoupdate_off").format(prefix=self.get_prefix()), show_alert=True))
             await call.delete()
             return
+        
         self.config["autoupdate"] = True
+
         await self.inline.bot(call.answer(self.strings("autoupdate_on"), show_alert=True))
         await call.delete()
+
     def get_changelog(self) -> str:
         try:
             repo = git.Repo()
+
             for remote in repo.remotes:
                 remote.fetch()
+
             if not (
                 diff := repo.git.log([f"HEAD..origin/{version.branch}", "--oneline"])
             ):
                 return False
         except Exception:
             return False
+
         res = "\n".join(
             f"<b>{commit.split()[0]}</b>:"
             f" <i>{utils.escape_html(' '.join(commit.split()[1:]))}</i>"
             for commit in diff.splitlines()[:10]
         )
+
         if diff.count("\n") >= 10:
             res += self.strings("more").format(len(diff.splitlines()) - 10)
+
         return res
+
     def get_latest(self) -> str:
         try:
             return next(
@@ -81,17 +101,21 @@ class UpdaterMod(loader.Module):
             ).hexsha
         except Exception:
             return ""
+
     @loader.loop(interval=60, autostart=True)
     async def poller(self):
         if (self.config["disable_notifications"] and not self.config["autoupdate"]) or not self.get_changelog():
             return
+
         self._pending = self.get_latest()
+
         if (
             self.get("ignore_permanent", False)
             and self.get("ignore_permanent") == self._pending
         ):
             await asyncio.sleep(60)
             return
+
         if self._pending not in {utils.get_git_hash(), self._notified}:
             if not self.config["autoupdate"]: manual_update = True
             else:
@@ -102,10 +126,12 @@ class UpdaterMod(loader.Module):
                             headers={"Accept": "application/vnd.github.v3.raw"}
                         )
                         text = await r.text()
+                    
                     new_version = ""
                     for line in text.splitlines():
                         if line.strip().startswith("__version__"):
                             new_version = ast.literal_eval(line.split("=")[1])
+
                     if version.__version__[0] == new_version[0]:
                         manual_update = False
                     else:
@@ -113,6 +139,7 @@ class UpdaterMod(loader.Module):
                         manual_update = True
                 except:
                     manual_update = True
+
             if manual_update:
                 m = await self.inline.bot.send_photo(
                     self.tg_id,
@@ -128,10 +155,14 @@ class UpdaterMod(loader.Module):
                     ),
                     reply_markup=self._markup(),
                 )
+
                 self._notified = self._pending
                 self.set("ignore_permanent", False)
+
                 await self._delete_all_upd_messages()
+
                 self.set("upd_msg", m.message_id)
+
             else:
                 m = await self.inline.bot.send_photo(
                     self.tg_id,
@@ -147,6 +178,7 @@ class UpdaterMod(loader.Module):
                     ),
                 )
                 await self.invoke("update", "-f", peer=self.inline.bot_username)
+
     async def _delete_all_upd_messages(self):
         for client in self.allclients:
             with contextlib.suppress(Exception):
@@ -154,19 +186,25 @@ class UpdaterMod(loader.Module):
                     client.tg_id,
                     client.loader.db.get("Updater", "upd_msg"),
                 )
+
     @loader.callback_handler()
     async def update_call(self, call: InlineCall):
         """Process update buttons clicks"""
         if call.data not in {"skyline/update", "skyline/ignore_upd"}:
             return
+
         if call.data == "skyline/ignore_upd":
             self.set("ignore_permanent", self.get_latest())
             await self.inline.bot(call.answer(self.strings("latest_disabled")))
             return
+
         await self._delete_all_upd_messages()
+
         with contextlib.suppress(Exception):
             await call.delete()
+
         await self.invoke("update", "-f", peer=self.inline.bot_username)
+
     @loader.command()
     async def changelog(self, message: Message):
         """Shows the changelog of the last major update"""
@@ -174,7 +212,9 @@ class UpdaterMod(loader.Module):
             changelog = f.read().split('##')[1].strip()
         if (await self._client.get_me()).premium:
             changelog.replace('🌑 Skyline', '<emoji document_id=5192765204898783881>🌘</emoji><emoji document_id=5195311729663286630>🌘</emoji><emoji document_id=5195045669324201904>🌘</emoji>')
+
         await utils.answer(message, self.strings('changelog').format(changelog))
+
     @loader.command()
     async def restart(self, message: Message):
         args = utils.get_args_raw(message)
@@ -201,8 +241,10 @@ class UpdaterMod(loader.Module):
                 raise
         except Exception:
             await self.restart_common(message, secure_boot)
+
     async def inline_restart(self, call: InlineCall, secure_boot: bool = False):
         await self.restart_common(call, secure_boot=secure_boot)
+
     async def process_restart_message(self, msg_obj: typing.Union[InlineCall, Message]):
         self.set(
             "selfupdatemsg",
@@ -212,6 +254,7 @@ class UpdaterMod(loader.Module):
                 else f"{utils.get_chat_id(msg_obj)}:{msg_obj.id}"
             ),
         )
+
     async def restart_common(
         self,
         msg_obj: typing.Union[InlineCall, Message],
@@ -227,8 +270,10 @@ class UpdaterMod(loader.Module):
             message = self.inline._units[msg_obj.form["uid"]]["message"]
         else:
             message = msg_obj
+
         if secure_boot:
             self._db.set(loader.__name__, "secure_boot", True)
+
         msg_obj = await utils.answer(
             msg_obj,
             self.strings("restarting_caption").format(
@@ -239,20 +284,29 @@ class UpdaterMod(loader.Module):
                 else "Skyline"
             ),
         )
+
         await self.process_restart_message(msg_obj)
+
         self.set("restart_ts", time.time())
+
+
         with contextlib.suppress(Exception):
             await main.skyline.web.stop()
+
         handler = logging.getLogger().handlers[0]
         handler.setLevel(logging.CRITICAL)
+
         for client in self.allclients:
             if client is not message.client:
                 await client.disconnect()
+
         if "LAVHOST" in os.environ:
             await self.client.send_message("lavhostbot", "🔄 Restart")
             return
+
         await message.client.disconnect()
         restart()
+
     async def download_common(self):
         try:
             repo = Repo(os.path.dirname(utils.get_base_dir()))
@@ -273,6 +327,7 @@ class UpdaterMod(loader.Module):
             repo.heads.master.set_tracking_branch(origin.refs.master)
             repo.heads.master.checkout(True)
             return False
+
     @staticmethod
     def req_common():
         logger.debug("Installing new requirements...")
@@ -294,6 +349,7 @@ class UpdaterMod(loader.Module):
             )
         except subprocess.CalledProcessError:
             logger.exception("Req install failed")
+
     @loader.command()
     async def update(self, message: Message):
         try:
@@ -326,6 +382,7 @@ class UpdaterMod(loader.Module):
                 raise
         except Exception:
             await self.inline_update(message)
+
     @loader.command()
     async def autoupdate(self, message: Message):
         """| switch autoupdate state"""
@@ -334,6 +391,7 @@ class UpdaterMod(loader.Module):
             await utils.answer(message, self.strings["autoupdate_on"])
         else:
             await utils.answer(message, self.strings["autoupdate_off"].format(prefix=self.get_prefix()))
+            
     async def inline_update(
         self,
         msg_obj: typing.Union[InlineCall, Message],
@@ -341,6 +399,7 @@ class UpdaterMod(loader.Module):
     ):
         if hard:
             os.system(f"cd {utils.get_base_dir()} && cd .. && git reset --hard HEAD")
+
         try:
             if "LAVHOST" in os.environ:
                 msg_obj = await utils.answer(
@@ -359,41 +418,52 @@ class UpdaterMod(loader.Module):
                 await self.process_restart_message(msg_obj)
                 await self.client.send_message("lavhostbot", "/update")
                 return
+
             with contextlib.suppress(Exception):
                 msg_obj = await utils.answer(msg_obj, self.strings("downloading"))
+
             req_update = await self.download_common()
+
             with contextlib.suppress(Exception):
                 msg_obj = await utils.answer(msg_obj, self.strings("installing"))
+
             if req_update:
                 self.req_common()
+
             await self.restart_common(msg_obj)
         except GitCommandError:
             if not hard:
                 await self.inline_update(msg_obj, True)
                 return
+
             logger.critical("Got update loop. Update manually via .terminal")
+
     @loader.command()
     async def source(self, message: Message):
         await utils.answer(
             message,
             self.strings("source").format(self.config["GIT_ORIGIN_URL"]),
         )
+
     async def client_ready(self):
         try:
             git.Repo()
         except Exception as e:
             raise loader.LoadError("Can't load due to repo init error") from e
+
         self._markup = lambda: self.inline.generate_markup(
             [
                 {"text": self.strings("update"), "data": "skyline/update"},
                 {"text": self.strings("ignore"), "data": "skyline/ignore_upd"},
             ]
         )
+
         if self.get("selfupdatemsg") is not None:
             try:
                 await self.update_complete()
             except Exception:
                 logger.exception("Failed to complete update!")
+
         if self.get("do_not_create", False):
             pass
         else:
@@ -401,7 +471,9 @@ class UpdaterMod(loader.Module):
                 await self._add_folder()
             except Exception:
                 logger.exception("Failed to add folder!")
+
             self.set("do_not_create", True)
+
         if not self.config["autoupdate"] and not self.get("autoupdate", False):
             await self.inline.bot.send_photo(
                 self.tg_id,
@@ -426,10 +498,13 @@ class UpdaterMod(loader.Module):
                     ]
                 ),
             )
+
     async def _add_folder(self):
         folders = await self._client(GetDialogFiltersRequest())
+
         if any(getattr(folder, "title", None) == "Skyline" for folder in folders.filters):
             return
+
         try:
             folder_id = (
                 max(
@@ -440,6 +515,7 @@ class UpdaterMod(loader.Module):
             )
         except ValueError:
             folder_id = 2
+
         try:
             await self._client(
                 UpdateDialogFilterRequest(
@@ -512,6 +588,7 @@ class UpdaterMod(loader.Module):
                 "- User got floodwait\n"
                 "Ignoring error and adding folder addition to ignore list\n"
             )
+
     async def update_complete(self):
         logger.debug("Self update successful! Edit message")
         start = self.get("restart_ts")
@@ -519,31 +596,41 @@ class UpdaterMod(loader.Module):
             took = round(time.time() - start)
         except Exception:
             took = "n/a"
+
         msg = self.strings("success").format(utils.ascii_face(), took)
         ms = self.get("selfupdatemsg")
+
         if ":" in str(ms):
             chat_id, message_id = ms.split(":")
             chat_id, message_id = int(chat_id), int(message_id)
             await self._client.edit_message(chat_id, message_id, msg)
             return
+
         await self.inline.bot.edit_message_text(
             inline_message_id=ms,
             text=self.inline.sanitise_text(msg),
         )
+
     async def full_restart_complete(self, secure_boot: bool = False):
         start = self.get("restart_ts")
+
         try:
             took = round(time.time() - start)
         except Exception:
             took = "n/a"
+
         self.set("restart_ts", None)
+
         ms = self.get("selfupdatemsg")
         msg = self.strings(
             "secure_boot_complete" if secure_boot else "full_success"
         ).format(utils.ascii_face(), took)
+
         if ms is None:
             return
+
         self.set("selfupdatemsg", None)
+
         if ":" in str(ms):
             chat_id, message_id = ms.split(":")
             chat_id, message_id = int(chat_id), int(message_id)
@@ -551,10 +638,12 @@ class UpdaterMod(loader.Module):
             await asyncio.sleep(60)
             await self._client.delete_messages(chat_id, message_id)
             return
+
         await self.inline.bot.edit_message_text(
             inline_message_id=ms,
             text=self.inline.sanitise_text(msg),
         )
+
     @loader.command()
     async def rollback(self, message: Message):
         if not (args := utils.get_args_raw(message)).isdigit():
@@ -582,13 +671,16 @@ class UpdaterMod(loader.Module):
                 ]
             ]
         )
+
     async def rollback_confirm(self, call: InlineCall, number: int):
         await utils.answer(call, self.strings('rollback_process').format(num=number))
         await asyncio.create_subprocess_shell(f'git reset --hard HEAD~{number}', stdout=asyncio.subprocess.PIPE)
         await self.restart_common(call)
+
     @loader.command()
     async def stop(self, message: Message):
         """| stops your userbot"""
+
         if "LAVHOST" in os.environ:
             await utils.answer(message, self.strings["ub_stop"].format(emoji=utils.get_platform_emoji()))
             await self.client.send_message("lavhostbot", "⏹ Stop")

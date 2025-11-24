@@ -1,34 +1,48 @@
 """Saves modules to disk and fetches them if remote storage is not available."""
+
+
+
 import asyncio
 import contextlib
 import hashlib
 import logging
 import os
 import typing
+
 import requests
+
 from . import utils
 from .tl_cache import CustomTelegramClient
 from .version import __version__
+
 logger = logging.getLogger(__name__)
+
 MAX_FILESIZE = 1024 * 1024 * 5  # 5 MB
 MAX_TOTALSIZE = 1024 * 1024 * 100  # 100 MB
+
+
 class LocalStorage:
     """Saves modules to disk and fetches them if remote storage is not available."""
+
     def __init__(self):
         self._path = os.path.join(os.path.expanduser("~"), ".skyline", "modules_cache")
         self._ensure_dirs()
+
     @property
     def _total_size(self) -> int:
         return sum(os.path.getsize(f.path) for f in os.scandir(self._path))
+
     def _ensure_dirs(self):
         """Ensures that the local storage directory exists."""
         if not os.path.isdir(self._path):
             os.makedirs(self._path)
+
     def _get_path(self, repo: str, module_name: str) -> str:
         return os.path.join(
             self._path,
             hashlib.sha256(f"{repo}_{module_name}".encode()).hexdigest() + ".py",
         )
+
     def save(self, repo: str, module_name: str, module_code: str):
         """
         Saves module to disk.
@@ -45,6 +59,7 @@ class LocalStorage:
                 size,
             )
             return
+
         if self._total_size + size > MAX_TOTALSIZE:
             logger.warning(
                 "Local storage is full, cannot save module %s from %s.",
@@ -52,9 +67,12 @@ class LocalStorage:
                 repo,
             )
             return
+
         with open(self._get_path(repo, module_name), "w") as f:
             f.write(module_code)
+
         logger.debug("Saved module %s from %s to local cache.", module_name, repo)
+
     def fetch(self, repo: str, module_name: str) -> typing.Optional[str]:
         """
         Fetches module from disk.
@@ -66,19 +84,27 @@ class LocalStorage:
         if os.path.isfile(path):
             with open(path, "r") as f:
                 return f.read()
+
         return None
+
+
 class RemoteStorage:
     def __init__(self, client: CustomTelegramClient):
         self._local_storage = LocalStorage()
         self._client = client
+
     async def preload(self, urls: typing.List[str]):
         """Preloads modules from remote storage."""
         logger.debug("Preloading modules from remote storage.")
         for url in urls:
             logger.debug("Preloading module %s", url)
+
             with contextlib.suppress(Exception):
                 await self.fetch(url)
+
             await asyncio.sleep(5)
+
+
     @staticmethod
     def _parse_url(url: str) -> typing.Tuple[str, str, str]:
         """
@@ -87,6 +113,7 @@ class RemoteStorage:
         :return: Tuple of (url, repo, module_name).
         """
         domain_name = url.split("/")[2]
+
         if domain_name == "raw.githubusercontent.com":
             owner, repo, branch = url.split("/")[3:6]
             module_name = url.split("/")[-1].split(".")[0]
@@ -98,7 +125,9 @@ class RemoteStorage:
         else:
             repo, module_name = url.rsplit("/", maxsplit=1)
             repo = repo.strip("/")
+
         return url, repo, module_name
+
     async def fetch(self, url: str, auth: typing.Optional[str] = None) -> str:
         """
         Fetches the module from the remote storage.
@@ -128,6 +157,9 @@ class RemoteStorage:
             if module := self._local_storage.fetch(repo, module_name):
                 logger.debug("Module source loaded from local storage.")
                 return module
+
             raise
+
         self._local_storage.save(repo, module_name, r.text)
+
         return r.text

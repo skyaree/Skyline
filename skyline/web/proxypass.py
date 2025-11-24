@@ -1,8 +1,13 @@
+
 import os
 import logging
 import typing
 from .ssh_tunnel import SSHTunnel
+
+
 logger = logging.getLogger(__name__)
+
+
 class ProxyPasser:
     def __init__(
         self,
@@ -17,15 +22,21 @@ class ProxyPasser:
         self._tunnels = [
             SSHTunnel(port=port, change_url_callback=self._on_url_change),
         ]
+
+
     def _on_url_change(self, url: str):
         self._tunnel_url = url
         if self._change_url_callback:
             self._change_url_callback(url)
+    
     def set_port(self, port: int):
         self.port = port
+
     async def get_url(self, timeout: float = 25) -> typing.Optional[str]:
+        
         if "DOCKER" in os.environ:
             return None
+        
         for tunnel in self._tunnels:
             try:
                 await tunnel.start()
@@ -36,4 +47,5 @@ class ProxyPasser:
                     logger.warning(f"{tunnel.__class__.__name__} failed to provide URL.")
             except Exception as e:
                 logger.warning(f"{tunnel.__class__.__name__} failed: {e}")
+
         return None

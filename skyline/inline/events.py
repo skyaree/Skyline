@@ -1,8 +1,11 @@
+
+
 import inspect
 import logging
 import re
 import typing
 from asyncio import Event
+
 from aiogram.types import CallbackQuery, ChosenInlineResult
 from aiogram.types import InlineQuery as AiogramInlineQuery
 from aiogram.types import (
@@ -14,14 +17,19 @@ from aiogram.types import (
     InputTextMessageContent,
 )
 from aiogram.types import Message as AiogramMessage
+
 from .. import utils
 from .types import BotInlineCall, InlineCall, InlineQuery, InlineUnit
+
 logger = logging.getLogger(__name__)
+
+
 class Events(InlineUnit):
     async def _message_handler(self, message: AiogramMessage):
         """Processes incoming messages"""
         if message.chat.type != "private" or message.text == "/start skyline init":
             return
+
         for mod in self._allmodules.modules:
             if (
                 not hasattr(mod, "aiogram_watcher")
@@ -29,21 +37,25 @@ class Events(InlineUnit):
                 and mod.__class__.__name__ != "InlineStuff"
             ):
                 continue
+
             try:
                 await mod.aiogram_watcher(message)
             except Exception:
                 logger.exception("Error on running aiogram watcher!")
+
     async def _inline_handler(self, inline_query: AiogramInlineQuery):
         """Inline query handler (forms' calls)"""
         if not (query := inline_query.query):
             await self._query_help(inline_query)
             return
+
         cmd = query.split()[0].lower()
         if cmd in self._allmodules.inline_handlers and await self.check_inline_security(
             func=self._allmodules.inline_handlers[cmd],
             user=inline_query.from_user.id,
         ):
             instance = InlineQuery(inline_query=inline_query)
+
             try:
                 if not (
                     result := await self._allmodules.inline_handlers[cmd](instance)
@@ -52,8 +64,10 @@ class Events(InlineUnit):
             except Exception:
                 logger.exception("Error on running inline watcher!")
                 return
+
             if isinstance(result, dict):
                 result = [result]
+
             if not isinstance(result, list):
                 logger.error(
                     "Got invalid type from inline handler. It must be `dict`, got `%s`",
@@ -61,6 +75,7 @@ class Events(InlineUnit):
                 )
                 await instance.e500()
                 return
+
             for res in result:
                 mandatory = ["message", "photo", "gif", "video", "file"]
                 if all(item not in res for item in mandatory):
@@ -73,11 +88,13 @@ class Events(InlineUnit):
                     )
                     await instance.e500()
                     return
+
                 if "file" in res and "mime_type" not in res:
                     logger.error(
                         "Got invalid type from inline handler. It contains field"
                         " `file`, so it must contain `mime_type` as well"
                     )
+
             try:
                 await inline_query.answer(
                     [
@@ -178,9 +195,11 @@ class Events(InlineUnit):
                     cmd,
                 )
                 return
+
         await self._form_inline_handler(inline_query)
         await self._gallery_inline_handler(inline_query)
         await self._list_inline_handler(inline_query)
+
     async def _callback_query_handler(
         self,
         call: CallbackQuery,
@@ -191,9 +210,11 @@ class Events(InlineUnit):
         """Callback query handler (buttons' presses)"""
         if reply_markup is None:
             reply_markup = []
+
         if re.search(r"authorize_web_(.{8})", call.data):
             self._web_auth_tokens += [re.search(r"authorize_web_(.{8})", call.data)[1]]
             return
+
         for func in self._allmodules.callback_handlers.values():
             if await self.check_inline_security(func=func, user=call.from_user.id):
                 try:
@@ -211,6 +232,7 @@ class Events(InlineUnit):
                         show_alert=True,
                     )
                     continue
+
         for unit_id, unit in self._units.copy().items():
             for button in utils.array_sum(unit.get("buttons", [])):
                 if not isinstance(button, dict):
@@ -219,6 +241,7 @@ class Events(InlineUnit):
                         button,
                     )
                     continue
+
                 if button.get("_callback_data") == call.data:
                     if (
                         button.get("disable_security", False)
@@ -248,6 +271,7 @@ class Events(InlineUnit):
                     ):
                         await call.answer(self.translator.getkey("inline.button403"))
                         return
+
                     try:
                         result = await button["callback"](
                             (
@@ -268,7 +292,9 @@ class Events(InlineUnit):
                             show_alert=True,
                         )
                         return
+
                     return result
+
         if call.data in self._custom_map:
             if (
                 self._custom_map[call.data].get("disable_security", False)
@@ -297,6 +323,7 @@ class Events(InlineUnit):
             ):
                 await call.answer(self.translator.getkey("inline.button403"))
                 return
+
             await self._custom_map[call.data]["handler"](
                 (
                     BotInlineCall
@@ -307,13 +334,16 @@ class Events(InlineUnit):
                 **self._custom_map[call.data].get("kwargs", {}),
             )
             return
+
     async def _chosen_inline_handler(
         self,
         chosen_inline_query: ChosenInlineResult,
     ):
         query = chosen_inline_query.query
+
         if not query:
             return
+
         for unit_id, unit in self._units.items():
             if (
                 unit_id == query
@@ -323,6 +353,7 @@ class Events(InlineUnit):
                 unit["inline_message_id"] = chosen_inline_query.inline_message_id
                 unit["future"].set()
                 return
+
         for unit_id, unit in self._units.copy().items():
             for button in utils.array_sum(unit.get("buttons", [])):
                 if (
@@ -335,6 +366,7 @@ class Events(InlineUnit):
                     + unit.get("always_allow", [])
                 ):
                     query = query.split(maxsplit=1)[1] if len(query.split()) > 1 else ""
+
                     try:
                         return await button["handler"](
                             InlineCall(chosen_inline_query, self, unit_id),
@@ -347,6 +379,7 @@ class Events(InlineUnit):
                             "Exception while running chosen query watcher!"
                         )
                         return
+
     async def _query_help(self, inline_query: InlineQuery):
         _help = []
         for name, fun in self._allmodules.inline_handlers.items():
@@ -355,15 +388,19 @@ class Events(InlineUnit):
                 user=inline_query.from_user.id,
             ):
                 continue
+
             try:
                 doc = inspect.getdoc(fun)
             except Exception:
                 doc = "🦥 No docs"
+
             try:
                 thumb = getattr(fun, "thumb_url", None) or fun.__self__.skyline_meta_pic
             except Exception:
                 thumb = None
+
             thumb = thumb or "https://img.icons8.com/fluency/50/000000/info-squared.png"
+
             _help += [
                 (
                     InlineQueryResultArticle(
@@ -396,6 +433,7 @@ class Events(InlineUnit):
                     ),
                 )
             ]
+
         if not _help:
             await inline_query.answer(
                 [
@@ -418,6 +456,7 @@ class Events(InlineUnit):
                 cache_time=0,
             )
             return
+
         await inline_query.answer(
             [
                 InlineQueryResultArticle(

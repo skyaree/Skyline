@@ -1,10 +1,15 @@
 """Entry point. Checks for user and starts main script"""
+
+
+
 import getpass
 import os
 import subprocess
 import sys
 import hashlib
+
 from ._internal import restart
+
 def get_file_hash(filename):
     hasher = hashlib.sha256()
     try:
@@ -13,6 +18,7 @@ def get_file_hash(filename):
         return hasher.hexdigest()
     except FileNotFoundError:
         return None
+
 def deps():
     subprocess.run(
         [
@@ -31,6 +37,7 @@ def deps():
     )
     with open(".requirements_hash", "w") as f:
         f.write(get_file_hash("requirements.txt"))
+
 if (
     getpass.getuser() == "root"
     and "--root" not in " ".join(sys.argv)
@@ -51,6 +58,7 @@ if (
         os.environ["NO_SUDO"] = "1"
         print("Added NO_SUDO in your environment variables")
         restart()
+
 if sys.version_info < (3, 9, 0):
     print("\U0001F6AB Error: you must use at least Python version 3.9.0")
 elif __package__ != "skyline":
@@ -69,6 +77,7 @@ else:
             print("\U0001F504 Installing dependencies...")
             deps()
             restart()
+
     try:
         from . import log
         log.init()
@@ -77,16 +86,20 @@ else:
         print(f"{str(e)}\n\U0001F504 Attempting dependencies installation... Just wait ⏱")
         deps()
         restart()
+
     if "SKYLINE_DO_NOT_RESTART" in os.environ:
         del os.environ["SKYLINE_DO_NOT_RESTART"]
     if "SKYLINE_DO_NOT_RESTART2" in os.environ:
         del os.environ["SKYLINE_DO_NOT_RESTART2"]
+
     prev_hash = None
     if os.path.exists(".requirements_hash"):
         with open(".requirements_hash", "r") as f:
             prev_hash = f.read().strip()
+
     if prev_hash != get_file_hash("requirements.txt"):
         print("\U0001F504 Detected changes in requirements.txt, updating dependencies...")
         deps()
         restart()
+    
     main.skyline.main()

@@ -1,3 +1,5 @@
+
+
 import git
 import time
 import git
@@ -7,6 +9,7 @@ import glob
 import requests
 import re
 import emoji
+
 from bs4 import BeautifulSoup
 from typing import Optional
 from pathlib import Path
@@ -19,21 +22,26 @@ from skylinetl.utils import get_display_name
 from .. import loader, utils, version
 import platform as lib_platform
 import getpass
+
 @loader.tds
 class SkylineInfoMod(loader.Module):
     """Show userbot info"""
+
     strings = {"name": "SkylineInfo"}
+
     def __init__(self):
         self.config = loader.ModuleConfig(
             loader.ConfigValue(
                 "custom_message",
                 doc=lambda: self.strings("_cfg_cst_msg"),
             ),
+
             loader.ConfigValue(
                 "banner_url",
                 "https://raw.githubusercontent.com/coddrago/assets/refs/heads/main/skyline/skyline_info.png",
                 lambda: self.strings("_cfg_banner"),
             ),
+
             loader.ConfigValue(
                 "show_skyline",
                 True,
@@ -72,6 +80,7 @@ class SkylineInfoMod(loader.Module):
                 validator=loader.validators.Boolean(),
             ),
         )
+
     def _get_os_name(self):
         try:
             with open("/etc/os-release", "r") as f:
@@ -80,6 +89,7 @@ class SkylineInfoMod(loader.Module):
                         return line.split("=")[1].strip().strip('"')
         except FileNotFoundError:
             return self.strings['non_detectable']
+        
     def remove_emoji_and_html(self, text: str) -> str:
         reg = r'<[^<]+?>'
         text = f"{re.sub(reg, '', text)}"
@@ -87,11 +97,13 @@ class SkylineInfoMod(loader.Module):
         emoji_list = [c for c in allchars if c in emoji.EMOJI_DATA]
         clean_text = ''.join([str for str in text if not any(i in str for i in emoji_list)])
         return clean_text
+    
     def imgur(self, url: str) -> str:
         page = requests.get(url, stream=True, headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"})
         soup = BeautifulSoup(page.text, 'html.parser')
         metatag = soup.find("meta", property="og:image")
         return metatag['content']
+
     def _render_info(self, start: float) -> str:
         try:
             repo = git.Repo(search_parent_directories=True)
@@ -101,6 +113,7 @@ class SkylineInfoMod(loader.Module):
             )
         except Exception:
             upd = ""
+
         me = self.config['imgSettings'][0] if (self.config['imgSettings'][0] != "Лапокапканот") and self.config['switchInfo'] else '<b><a href="tg://user?id={}">{}</a></b>'.format(
             self._client.skyline_me.id,
             utils.escape_html(get_display_name(self._client.skyline_me)),
@@ -108,7 +121,9 @@ class SkylineInfoMod(loader.Module):
         build = utils.get_commit_url()
         _version = f'<i>{".".join(list(map(str, list(version.__version__))))}</i>'
         prefix = f"«<code>{utils.escape_html(self.get_prefix())}</code>»"
+
         platform = utils.get_named_platform()
+
         for emoji, icon in [
             ("🍊", "<emoji document_id=5449599833973203438>🧡</emoji>"),
             ("🍇", "<emoji document_id=5449468596952507859>💜</emoji>"),
@@ -185,6 +200,7 @@ class SkylineInfoMod(loader.Module):
                 platform,
             )
         )
+    
     def _get_info_photo(self, start: float) -> Optional[Path]:
         imgform = self.config['banner_url'].split('.')[-1]
         imgset = self.config['imgSettings']
@@ -212,6 +228,7 @@ class SkylineInfoMod(loader.Module):
             img.save(path)
             return Path(path).absolute()
         return None
+    
     @loader.command()
     async def insfont(self, message: Message):
         "<Url|Reply to font> - Install font"
@@ -258,6 +275,7 @@ class SkylineInfoMod(loader.Module):
             message,
             self.strings["font_installed"]
         )
+
     @loader.command()
     async def infocmd(self, message: Message):
         start = time.perf_counter_ns()
@@ -272,6 +290,7 @@ class SkylineInfoMod(loader.Module):
                         self.strings["incorrect_img_format"]
                     )
                     return
+
                 await utils.answer_file(
                     message,
                     self._get_info_photo(start),
@@ -303,15 +322,19 @@ class SkylineInfoMod(loader.Module):
                 ),
                 reply_to=getattr(message, "reply_to_msg_id", None),
             )
+
     @loader.command()
     async def skylineinfo(self, message: Message):
         await utils.answer(message, self.strings("desc"))
+
     @loader.command()
     async def setinfo(self, message: Message):
         if not (args := utils.get_args_html(message)):
             return await utils.answer(message, self.strings("setinfo_no_args"))
+
         self.config["custom_message"] = args
         await utils.answer(message, self.strings("setinfo_success"))
+
     @loader.command()
     async def switchinfo(self, message: Message):
         """| switch Image info state"""

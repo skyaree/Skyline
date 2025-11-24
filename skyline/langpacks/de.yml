@@ -88,6 +88,7 @@ skyline_security:
   _cmd_doc_newsgroup: "<Name> - Eine neue Sicherheitsgruppe erstellen"
   _cmd_doc_sgroupadd: "<Name> [Benutzer oder Antwort] - Benutzer zur Sicherheitsgruppe hinzufügen"
   _cmd_doc_sgroupdel: "<Name> [Benutzer oder Antwort] - Benutzer aus der Sicherheitsgruppe entfernen"
+
 skyline_settings:
   watchers: "<emoji document_id=5424885441100782420>👀</emoji> <b>Wächter:</b>\n\n<blockquote expandable><b>{}</b></blockquote>"
   mod404: "<emoji document_id=5210952531676504517>🚫</emoji> <b>Wächter {} nicht gefunden</b>"
@@ -153,6 +154,7 @@ skyline_settings:
   core_protection_e_btn: "🔓 Kernschutz installieren"
   core_protection_removed: "🔓 <b>Kernschutz erfolgreich entfernt</b>"
   core_protection_enabled: "🔓 <b>Kernschutz erfolgreich installiert</b>"
+
 terminal:
   fw_protect: "Verzögerung zwischen Bearbeitungen"
   what_to_kill: "<emoji document_id=5210952531676504517>🚫</emoji> <b>Antworten Sie auf den auszuführenden Befehl, um ihn zu beenden</b>"
@@ -173,6 +175,7 @@ terminal:
   _cmd_doc_apt: "Kurzform für '.terminal apt'"
   _cmd_doc_terminal: "<Befehl> - Führen Sie einen Befehl im System aus"
   _cmd_doc_terminate: "[-f zum Erzwingen] - Antworten Sie auf eine Nachricht, um den Prozess zu beenden"
+
 skyline_web:
   privacy_leak: "⚠️ <b>Dieser Befehl gewährt Zugriff auf die Skyline-Weboberfläche. Die Ausführung in öffentlichen Chats stellt ein Sicherheitsrisiko dar. Es wird empfohlen, dies in den <a href='tg://openmessage?user_id={}'>Gespeicherten Nachrichten</a> auszuführen. Führe</b> <code>{}proxypass force_insecure</code> <b>aus, um diese Warnung zu deaktivieren</b>"
   privacy_leak_nowarn: "⚠️ <b>Dieser Befehl gewährt Zugriff auf die Skyline-Weboberfläche. Die Ausführung in öffentlichen Chats stellt ein Sicherheitsrisiko dar. Es wird empfohlen, dies in den <a href='tg://openmessage?user_id={}'>Gespeicherten Nachrichten</a> auszuführen.</b>"
@@ -204,6 +207,7 @@ skyline_web:
   request_code: "🔃 Code erneut anfordern"
   code_expired: "Der Code ist abgelaufen."
   _cmd_doc_weburl: "Öffnet einen Tunnel zur Skyline-Weboberfläche"
+
 skyline_backup:
   period: "⌚️ <b>Die Unit «ALPHA»</b> erstellt regelmäßig Backups. Diese Einstellungen können später geändert werden.\n\nBitte wählen Sie die Backup-Häufigkeit\n\n<b>🚫 Es ist daher nicht möglich, Module, die mit dem Befehl .lm aus Dateien heruntergeladen wurden, wiederherzustellen! Seien Sie vorsichtig und führen Sie vor der Wiederherstellung .backupmods aus.</b>"
   saved: "✅ Die Periodizität ist gespeichert! Sie kann mit <code>{prefix}set_backup_period</code> geändert werden."
@@ -232,6 +236,7 @@ skyline_backup:
   _cmd_doc_set_backup_period: "<Zeit in Stunden> - Legt die Häufigkeit der Backups fest"
   _cmd_doc_backupall: "Erstellt eine allgemeine Sicherungskopie (Module + Datenbank)"
   _cmd_doc_restoreall: "Stellt ein gemeinsames Backup wieder her (Basis + Module)"
+
 presets:
   _fun_title: "🪩 Unterhaltsame Module"
   _fun_desc: "Lustige Module – Animationen, Spam, Spiele und mehr."
@@ -249,6 +254,7 @@ presets:
   installing_module: "<emoji document_id=5451732530048802485>⏳</emoji> <b>Installation des Sets</b> <code>{}</code> <b>({}/{} Module)...</b>\n\n<emoji document_id=5188377234380954537>🪐</emoji> <i>Installation des Moduls {}...</i>"
   installed: "<emoji document_id=5436040291507247633>🎉</emoji> <b>Set</b> <code>{}</code> <b>wurde installiert!</b>"
   already_installed: "✅ [Installiert]"
+
 settings:
   choose_installation: "<emoji document_id=5363805650327450240>🪐</emoji> <b>Wählen Sie Ihre Skyline-Installationsoption:</b>"
   vds_install: "<emoji document_id=5471952986970267163>💎</emoji> Der Installationsprozess auf einem VDS wird mit einem einzigen Befehl durchgeführt:\n<pre><code class=\"language-shell\">sudo apt update &amp;&amp; sudo apt upgrade -y &amp;&amp; sudo apt install git python3-pip &amp;&amp; git clone https://github.com/coddrago/Skyline &amp;&amp; cd Skyline &amp;&amp; pip install -r requirements.txt &amp;&amp; python3 -m skyline</code></pre>\n<i>Hinweis: Wenn Sie keine sudo-Rechte haben, lassen Sie den entsprechenden Teil des Befehls aus.</i>"
@@ -294,6 +300,7 @@ settings:
   _cmd_doc_setprefix: "<Präfix> - Setzt den Befehlspräfix"
   _cmd_doc_unblacklist: "[Chat] - Aktiviert den Bot an einem bestimmten Ort"
   _cmd_doc_unblacklistuser: "[Benutzer] - Erlaubt einem Benutzer, Befehle auszuführen"
+
 skyline_config:
   choose_core: "⚙️ <b>Wähle eine Kategorie</b>"
   configure: "⚙️ <b>Wähle ein Modul zur Konfiguration</b>"
@@ -330,6 +337,7 @@ skyline_config:
   libraries: "📦 Bibliotheken"
   _cmd_doc_config: "Module konfigurieren"
   _cmd_doc_fconfig: "<Modul> <Einstellung> <Wert> - Setzt den Konfigurationswert für ein Modul"
+
 inline_stuff:
   bot_username_invalid: "<emoji document_id=5210952531676504517>🚫</emoji> <b>Ungültiger Bot-Benutzername. Er muss auf</b> <code>bot</code> <b>enden und mindestens 5 Zeichen lang sein</b>"
   token_invalid: "<emoji document_id=5210952531676504517>🚫</emoji> <b>Das angegebene Bot-Token ist ungültig. Es muss 8-10 Zahlen, </b><code>:</code> <b>und 34-36 Symbole enthalten</b>"
@@ -340,6 +348,7 @@ inline_stuff:
   restart: "🔄 Dein Skyline wird neu gestartet..."
   prefix_reset: "🔀 Präfix zurückgesetzt!"
   _cmd_doc_ch_skyline_bot: "<Benutzername> - Ändert den Benutzernamen des Inline-Bots"
+
 test:
   set_loglevel: "<emoji document_id=5355133243773435190>🚫</emoji> <b>Gib das Log-Level als Zahl oder String an</b>"
   no_logs: "<emoji document_id=5355133243773435190>🤷‍♀️</emoji> <b>Es gibt keine Logs mit dem Level</b> <code>{}</code><b>.</b>"
@@ -365,6 +374,7 @@ test:
   cancel: "🚫 Abbrechen"
   logs_cleared: "🗑 <b>Logs wurden gelöscht</b>"
   _cmd_doc_clearlogs: "Löscht die Logs"
+
 updater:
   source: "<emoji document_id=5208634061085492935>📖</emoji> <b>Den Quellcode kannst du <a href='{}'>hier</a> einsehen</b>"
   restarting_caption: "<emoji document_id=5208622108191506906>🕗</emoji> <b>Dein {} wird neu gestartet...</b>"
@@ -404,6 +414,7 @@ updater:
   update: "🔄 Aktualisieren"
   ignore: "🚫 Ignorieren"
   changelog: '<emoji document_id=5434144690511290129>📰</emoji> <b>Änderungsprotokoll des letzten großen Updates:</b><pre><code class="language-skyline">{}</code></pre>'
+
 api_protection:
   warning: "⚠️ <b>ACHTUNG!</b>\n\nDas Konto hat die in der Konfiguration angegebenen Anfrageratenlimits überschritten. Um Telegram API-Fluten zu vermeiden, wurde der Userbot <b>vollständig eingefroren</b> für {} Sekunden. Weitere Informationen befinden sich in der beigefügten Datei unten. \n\nEs wird empfohlen, die Hilfe der <code>{prefix}support</code> Gruppe in Anspruch zu nehmen!\n\nWenn du davon ausgehst, dass dies ein geplantes Verhalten des Userbots ist, warte einfach, bis der Timer abläuft, und beim nächsten Mal, wenn du eine ressourcenintensive Aufgabe planst, benutze <code>{prefix}suspend_api_protect</code> Zeit in Sekunden"
   args_invalid: "<emoji document_id=5210952531676504517>🚫</emoji> <b>Ungültige Argumente</b>"
@@ -425,6 +436,7 @@ api_protection:
   _cmd_doc_api_fw_protection: "Aktivieren/Deaktivieren des API-Schutzes"
   _cmd_doc_debugger: "Zeigt den Werkzeug-PIN an"
   _cmd_doc_suspend_api_protect: "<Zeit in Sekunden> - Friert den API-Schutz für N Sekunden ein"
+
 help:
   undoc: "🦥 Keine Beschreibung"
   all_header: "<b>{} Module verfügbar, {} verborgen:</b>"
@@ -440,6 +452,7 @@ help:
   _cmd_doc_help: "[Modul] [-f] - Zeigt Hilfe an"
   _cmd_doc_helphide: "<Modul oder Module> - Versteckt das Modul(-e) aus der Hilfe\n*Trenne die Module mit Leerzeichen"
   _cmd_doc_support: "Zeigt den Link zum Skyline Hilfe-Chat"
+
 skyline_info:
   owner: "Besitzer"
   version: "Version"
@@ -471,6 +484,7 @@ skyline_info:
   _cmd_doc_skylineinfo: "Sende Informationen im Stil von 'Was ist Skyline?'"
   _cmd_doc_info: "Sendet Informationen über den Bot"
   _cmd_doc_setinfo: "<Text> - Ändere den Text in .info"
+
 loader:
   loadmod_pm_timeout: "Bitte warten Sie 10 Sekunden, bevor Sie diese Aktion bestätigen"
   loadmod_not_allowed_fresh_pm: "<emoji document_id=5447644880824181073>⚠️</emoji> <b><u>Lesen Sie dies sorgfältig!</u></b> <emoji document_id=5447644880824181073>⚠️</emoji>\n\n<b>Sie versuchen, ein Modul in privaten Nachrichten von einem Benutzer zu laden, den Sie nicht kennen.</b> Module, die nicht vom Entwickler bestätigt wurden, können viele Probleme verursachen, von <b>Manipulationen mit Ihrem Konto bis hin zu Kontoentfernung oder Sitzungsbeschädigung</b>. Wenn Sie diesen Benutzer kennen und ihm <b><u>100%</u></b> vertrauen, warten Sie ein paar Tage und versuchen Sie es erneut."
@@ -548,6 +562,7 @@ loader:
   _cmd_doc_addrepo: "Füge ein zusätzliches Repository hinzu"
   _cmd_doc_delrepo: "Lösche ein zusätzliches Repository"
   basic_auth_doc: "Authentifizierung für den Zugriff auf das Repository"
+
 translations:
   lang_saved: "{} <b>Sprache gespeichert!</b>"
   pack_saved: "<emoji document_id=5197474765387864959>👍</emoji> <b>Übersetzungspaket gespeichert!</b>"
@@ -563,6 +578,7 @@ translations:
   rpc_error: "<emoji document_id=5877477244938489129>🚫</emoji> <b>Befehl</b> <code>{}</code> <b>ist wegen RPC-Fehler fehlgeschlagen:</b> <code>{}</code>"
   _cmd_doc_dllangpack: "[Link zum Paket | leer, um zu löschen] - Ändere das externe Übersetzungspaket"
   _cmd_doc_setlang: "[Sprachen] - Ändere die Standardsprache"
+
 eval:
   eval: "<emoji document_id={}>💻</emoji><b> Code:</b>\n<pre><code class=\"language-{}\">{}</code></pre>\n\n<emoji document_id=5197688912457245639>✅</emoji><b> Ergebnis:</b>\n<pre><code class=\"language-{}\">{}</code></pre>"
   eval_py: "<emoji document_id={}>💻</emoji><b> Code:</b>\n<pre><code class=\"language-{}\">{}</code></pre>"
@@ -579,12 +595,14 @@ eval:
   _cmd_doc_enode: "Führt Node.js-Code aus"
   _cmd_doc_ephp: "Führt PHP-Code aus"
   _cmd_doc_eruby: "Führt Ruby-Code aus"
+
 translate:
   no_args: "<emoji document_id=5210952531676504517>❌</emoji> <b>Keine Argumente angegeben</b>"
   error: "<emoji document_id=5210952531676504517>❌</emoji> <b>Text konnte nicht übersetzt werden</b>"
   language: "de"
   _cls_doc: "Übersetzt Text (offensichtlich)"
   _cmd_doc_tr: "[Sprache] [Text] - Übersetzt den Text"
+
 quickstart:
   base: "🪐 <b>Hallo.</b> Ihr <b>Skyline</b>-Userbot ist jetzt installiert.\n\n❓ <b>Benötigen Sie Hilfe?</b> Nehmen Sie an <a href=\"https://t.me/skyline_talks\">unserem Support-Chat</a> teil. Wir helfen <b>jedem</b>.\n\n💁‍♀️ <b>Kurzanleitung:</b>\n\n1️⃣ <b>Schreiben Sie</b> <code>.help</code>, <b>um die Liste der Module anzuzeigen</b>\n2️⃣ <b>Schreiben Sie</b> <code>.help &lt;Modulname/Befehl&gt;</code>, <b>um die Beschreibung des Moduls anzuzeigen</b>\n3️⃣ <b>Schreiben Sie</b> <code>.dlmod &lt;link&gt;</code> <b>um ein Modul von einem Link zu laden</b>\n4️⃣ <b>Schreiben</b> <code>.loadmod</code> <b>als Antwort auf eine Datei, um ein Modul daraus zu laden</b>\n5️⃣ <b>Schreiben</b> <code>.unloadmod &lt;Modulname&lt;</code> <b>um ein Modul zu entladen</b>\n\n💡 <b>Skyline unterstützt Module von Hikka, Friendly-Telegram und GeekTG sowie seine eigenen.</b>\n"
   railway: "🚂 <b>Dein Userbot ist auf Railway installiert</b>. Auf dieser Plattform erhältst du nur <b>500 kostenlose Stunden pro Monat</b>. Wenn das Limit erreicht ist, wird dein <b>Userbot eingefroren</b>. Im nächsten Monat <b>musst du zu https://railway.app gehen und ihn neu starten</b>."
@@ -592,6 +610,7 @@ quickstart:
   language_saved: "🇩🇪 Sprache gespeichert!"
   language: "🇩🇪 Deutsch"
   btn_support: "🥷 Support-Chat"
+
 $validators:
   boolean: "logischem Wert"
   positive: "positivem "
@@ -627,6 +646,7 @@ $validators:
   emoji_max_len: "nicht mehr als {max_len} Emojis"
   emoji: "Emoji"
   entity_like: "Link zu einer Entität, Benutzernamen oder Telegram ID"
+
 $inline:
   opening_form: " <b>Öffne das Formular...</b>"
   opening_gallery: " <b>Öffne die Galerie...</b>"
