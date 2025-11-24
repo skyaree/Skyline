@@ -11,12 +11,20 @@
 # You can redistribute it and/or modify it under the terms of the GNU AGPLv3
 # 🔑 https://www.gnu.org/licenses/agpl-3.0.html
 
-__version__ = (2, 0, 0)
+# ©️ Skyaree, 2025
+# This file is a part of Skyline Userbot
+# 🌐 https://github.com/skyaree/skyline
+# You can redistribute it and/or modify it under the terms of the GNU AGPLv3
+# 🔑 https://www.gnu.org/licenses/agpl-3.0.html
+
+
+
+__version__ = "sunshine"
 
 import os
 
 import git
-from heroku._internal import restart
+from skyline._internal import restart
 
 try:
     branch = git.Repo(
@@ -32,3 +40,4 @@ async def check_branch(me_id: int, allowed_ids: list):
         repo.git.reset("--hard", "HEAD")
         repo.git.checkout("master", force=True)
         restart()
+
