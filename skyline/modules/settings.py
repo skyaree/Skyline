@@ -6,8 +6,8 @@
 import contextlib
 
 # ©️ Codrago, 2024-2025
-# This file is a part of Heroku Userbot
-# 🌐 https://github.com/coddrago/Heroku
+# This file is a part of Skyline Userbot
+# 🌐 https://github.com/coddrago/Skyline
 # You can redistribute it and/or modify it under the terms of the GNU AGPLv3
 # 🔑 https://www.gnu.org/licenses/agpl-3.0.html
 
@@ -108,7 +108,7 @@ class CoreMod(loader.Module):
         module = self.allmodules.get_classname(module)
         return f"{str(chatid)}.{module}" if module else chatid
 
-    @loader.command(ru_doc="Информация о Хероку", en_doc="Information of Heroku", ua_doc="Інформація про Хероку", de_doc="Informationen über Heroku")
+    @loader.command(ru_doc="Информация о Хероку", en_doc="Information of Skyline", ua_doc="Інформація про Хероку", de_doc="Informationen über Skyline")
     async def skylinecmd(self, message: Message):
         await utils.answer(
             message,
@@ -116,7 +116,7 @@ class CoreMod(loader.Module):
                 (
                     utils.get_platform_emoji()
                     if self._client.skyline_me.premium and CUSTOM_EMOJIS
-                    else "🪐 <b>Heroku userbot</b>"
+                    else "🪐 <b>Skyline userbot</b>"
                 ),
                 *version.__version__,
                 utils.get_commit_url(),

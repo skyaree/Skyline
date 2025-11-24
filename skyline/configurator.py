@@ -5,8 +5,8 @@
 # 🔑 https://www.gnu.org/licenses/agpl-3.0.html
 
 # ©️ Codrago, 2024-2025
-# This file is a part of Heroku Userbot
-# 🌐 https://github.com/coddrago/Heroku
+# This file is a part of Skyline Userbot
+# 🌐 https://github.com/coddrago/Skyline
 # You can redistribute it and/or modify it under the terms of the GNU AGPLv3
 # 🔑 https://www.gnu.org/licenses/agpl-3.0.html
 
@@ -44,7 +44,7 @@ def api_config(tty: typing.Optional[bool] = None):
     if tty:
         print_banner("banner.txt")
 
-    tty_print("\033[0;95mWelcome to Heroku Userbot!\033[0m", tty)
+    tty_print("\033[0;95mWelcome to Skyline Userbot!\033[0m", tty)
     tty_print("\033[0;96m1. Go to https://my.telegram.org and login\033[0m", tty)
     tty_print("\033[0;96m2. Click on \033[1;96mAPI development tools\033[0m", tty)
     tty_print(

@@ -7,8 +7,8 @@
 # 🔑 https://www.gnu.org/licenses/agpl-3.0.html
 
 # ©️ Codrago, 2024-2025
-# This file is a part of Heroku Userbot
-# 🌐 https://github.com/coddrago/Heroku
+# This file is a part of Skyline Userbot
+# 🌐 https://github.com/coddrago/Skyline
 # You can redistribute it and/or modify it under the terms of the GNU AGPLv3
 # 🔑 https://www.gnu.org/licenses/agpl-3.0.html
 
@@ -54,7 +54,7 @@ if (
     and all(trigger not in os.environ for trigger in {"DOCKER", "NO_SUDO"})
 ):
     print("\U0001F6AB" * 15)
-    print("You attempted to run Heroku on behalf of root user")
+    print("You attempted to run Skyline on behalf of root user")
     print("Please, create a new user and restart script")
     print("If this action was intentional, pass --root argument instead")
     print("\U0001F6AB" * 15)
@@ -97,10 +97,10 @@ else:
         deps()
         restart()
 
-    if "HEROKU_DO_NOT_RESTART" in os.environ:
-        del os.environ["HEROKU_DO_NOT_RESTART"]
-    if "HEROKU_DO_NOT_RESTART2" in os.environ:
-        del os.environ["HEROKU_DO_NOT_RESTART2"]
+    if "SKYLINE_DO_NOT_RESTART" in os.environ:
+        del os.environ["SKYLINE_DO_NOT_RESTART"]
+    if "SKYLINE_DO_NOT_RESTART2" in os.environ:
+        del os.environ["SKYLINE_DO_NOT_RESTART2"]
 
     prev_hash = None
     if os.path.exists(".requirements_hash"):

@@ -23,8 +23,8 @@
 # 🔑 https://www.gnu.org/licenses/agpl-3.0.html
 
 # ©️ Codrago, 2024-2025
-# This file is a part of Heroku Userbot
-# 🌐 https://github.com/coddrago/Heroku
+# This file is a part of Skyline Userbot
+# 🌐 https://github.com/coddrago/Skyline
 # You can redistribute it and/or modify it under the terms of the GNU AGPLv3
 # 🔑 https://www.gnu.org/licenses/agpl-3.0.html
 
@@ -373,7 +373,7 @@ def raise_auth():
     raise InteractiveAuthRequired()
 
 
-class Heroku:
+class Skyline:
     """Main userbot instance, which can handle multiple clients"""
 
     def __init__(self):
@@ -593,7 +593,7 @@ class Heroku:
         db = database.Database(client)
         await db.init()
 
-        while (bot := input("You can enter a custom bot username or leave it empty and Heroku will generate a random one: ")):
+        while (bot := input("You can enter a custom bot username or leave it empty and Skyline will generate a random one: ")):
             try:
                 if await self._check_bot(client, bot):
                     db.set("skyline.inline", "custom_bot", bot)
@@ -885,7 +885,7 @@ class Heroku:
                         f"🔗 Web url: {self.web.url}"
                     )
                     logging.debug(
-                        "\n🪐 Heroku %s #%s (%s) started\n%s",
+                        "\n🪐 Skyline %s #%s (%s) started\n%s",
                         ".".join(list(map(str, list(__version__)))),
                         build[:7],
                         upd,
@@ -897,8 +897,8 @@ class Heroku:
                 logging.getLogger().handlers[0].get_logid_by_client(client.tg_id),
                 "https://raw.githubusercontent.com/coddrago/assets/refs/heads/main/skyline/skyline_started.png",
                 caption=(
-                    "🪐 <b>Heroku {} started!</b>\n\n⚙ <b>GitHub commit SHA: <a"
-                    ' href="https://github.com/coddrago/Heroku/commit/{}">{}</a></b>\n🔎'
+                    "🪐 <b>Skyline {} started!</b>\n\n⚙ <b>GitHub commit SHA: <a"
+                    ' href="https://github.com/coddrago/Skyline/commit/{}">{}</a></b>\n🔎'
                     " <b>Update status: {}</b>\n<b>{}</b>".format(
                         ".".join(list(map(str, list(__version__)))),
                         build,
@@ -1065,4 +1065,4 @@ class Heroku:
 
 skylinetl.extensions.html.CUSTOM_EMOJIS = not get_config_key("disable_custom_emojis")
 
-skyline = Heroku()
+skyline = Skyline()

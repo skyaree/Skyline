@@ -5,8 +5,8 @@
 # 🔑 https://www.gnu.org/licenses/agpl-3.0.html
 
 # ©️ Codrago, 2024-2025
-# This file is a part of Heroku Userbot
-# 🌐 https://github.com/coddrago/Heroku
+# This file is a part of Skyline Userbot
+# 🌐 https://github.com/coddrago/Skyline
 # You can redistribute it and/or modify it under the terms of the GNU AGPLv3
 # 🔑 https://www.gnu.org/licenses/agpl-3.0.html
 
@@ -42,7 +42,7 @@ from aiogram.exceptions import (
 )
 
 from .. import utils
-from ..types import HerokuReplyMarkup
+from ..types import SkylineReplyMarkup
 from .types import InlineCall, InlineUnit
 
 logger = logging.getLogger(__name__)
@@ -51,7 +51,7 @@ logger = logging.getLogger(__name__)
 class Utils(InlineUnit):
     def _generate_markup(
         self,
-        markup_obj: typing.Optional[typing.Union[HerokuReplyMarkup, str]],
+        markup_obj: typing.Optional[typing.Union[SkylineReplyMarkup, str]],
     ) -> typing.Optional[InlineKeyboardMarkup]:
         """Generate markup for form or list of `dict`s"""
         if not markup_obj:
@@ -286,7 +286,7 @@ class Utils(InlineUnit):
         return None
 
     def _normalize_markup(
-        self, reply_markup: HerokuReplyMarkup
+        self, reply_markup: SkylineReplyMarkup
     ) -> typing.List[typing.List[typing.Dict[str, typing.Any]]]:
         if isinstance(reply_markup, dict):
             return [[reply_markup]]
@@ -304,7 +304,7 @@ class Utils(InlineUnit):
     async def _edit_unit(
         self,
         text: typing.Optional[str] = None,
-        reply_markup: typing.Optional[HerokuReplyMarkup] = None,
+        reply_markup: typing.Optional[SkylineReplyMarkup] = None,
         *,
         photo: typing.Optional[str] = None,
         file: typing.Optional[str] = None,
@@ -731,7 +731,7 @@ class Utils(InlineUnit):
 
     def _validate_markup(
         self,
-        buttons: typing.Optional[HerokuReplyMarkup],
+        buttons: typing.Optional[SkylineReplyMarkup],
     ) -> typing.List[typing.List[typing.Dict[str, typing.Any]]]:
         if buttons is None:
             buttons = []

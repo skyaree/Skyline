@@ -5,8 +5,8 @@
 # 🔑 https://www.gnu.org/licenses/agpl-3.0.html
 
 # ©️ Codrago, 2024-2025
-# This file is a part of Heroku Userbot
-# 🌐 https://github.com/coddrago/Heroku
+# This file is a part of Skyline Userbot
+# 🌐 https://github.com/coddrago/Skyline
 # You can redistribute it and/or modify it under the terms of the GNU AGPLv3
 # 🔑 https://www.gnu.org/licenses/agpl-3.0.html
 
@@ -31,10 +31,10 @@ from ..inline.types import BotInlineCall
 logger = logging.getLogger(__name__)
 
 @loader.tds
-class HerokuBackupMod(loader.Module):
+class SkylineBackupMod(loader.Module):
     """Handles database and modules backups"""
 
-    strings = {"name": "HerokuBackup"}
+    strings = {"name": "SkylineBackup"}
 
     async def client_ready(self):
         if not self.get("period"):
@@ -172,7 +172,7 @@ class HerokuBackupMod(loader.Module):
         except loader.StopLoop:
             raise
         except Exception:
-            logger.exception("HerokuBackup failed")
+            logger.exception("SkylineBackup failed")
             await asyncio.sleep(60)
 
     @loader.callback_handler()

@@ -5,8 +5,8 @@
 # 🔑 https://www.gnu.org/licenses/agpl-3.0.html
 
 # ©️ Codrago, 2024-2025
-# This file is a part of Heroku Userbot
-# 🌐 https://github.com/coddrago/Heroku
+# This file is a part of Skyline Userbot
+# 🌐 https://github.com/coddrago/Skyline
 # You can redistribute it and/or modify it under the terms of the GNU AGPLv3
 # 🔑 https://www.gnu.org/licenses/agpl-3.0.html
 
@@ -53,11 +53,11 @@ class TestMod(loader.Module):
                 False,
                 (
                     "⚠️ Do not touch, if you don't know what it does!\nBy default, "
-                    " Heroku will try to determine, which client caused logs. E.g. there"
+                    " Skyline will try to determine, which client caused logs. E.g. there"
                     " is a module TestModule installed on Client1 and TestModule2 on"
                     " Client2. By default, Client2 will get logs from TestModule2, and"
                     " Client1 will get logs from TestModule. If this option is enabled,"
-                    " Heroku will send all logs to Client1 and Client2, even if it is"
+                    " Skyline will send all logs to Client1 and Client2, even if it is"
                     " not the one that caused the log."
                 ),
                 validator=loader.validators.Boolean(),
@@ -359,7 +359,7 @@ class TestMod(loader.Module):
             *main.__version__,
             (
                 " <a"
-                f' href="https://github.com/coddrago/Heroku/commit/{ghash}">@{ghash[:8]}</a>'
+                f' href="https://github.com/coddrago/Skyline/commit/{ghash}">@{ghash[:8]}</a>'
                 if ghash
                 else ""
             ),
@@ -423,7 +423,7 @@ class TestMod(loader.Module):
         chat, _ = await utils.asset_channel(
             self._client,
             "skyline-logs",
-            "🪐 Your Heroku logs will appear in this chat",
+            "🪐 Your Skyline logs will appear in this chat",
             silent=True,
             invite_bot=True,
             avatar="https://raw.githubusercontent.com/coddrago/assets/refs/heads/main/skyline/skyline_logs.png",

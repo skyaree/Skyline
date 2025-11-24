@@ -5,8 +5,8 @@
 # 🔑 https://www.gnu.org/licenses/agpl-3.0.html
 
 # ©️ Codrago, 2024-2025
-# This file is a part of Heroku Userbot
-# 🌐 https://github.com/coddrago/Heroku
+# This file is a part of Skyline Userbot
+# 🌐 https://github.com/coddrago/Skyline
 # You can redistribute it and/or modify it under the terms of the GNU AGPLv3
 # 🔑 https://www.gnu.org/licenses/agpl-3.0.html
 
@@ -260,7 +260,7 @@ class InlineQuery(AiogramInlineQuery):
         await self.answer(
             self._get_res(
                 title="🚫 426",
-                description="You need to update Heroku before sending this request",
+                description="You need to update Skyline before sending this request",
                 thumbnail_url="https://img.icons8.com/fluency/344/approve-and-update.png",
             ),
             cache_time=0,

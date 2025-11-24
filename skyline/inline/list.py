@@ -5,8 +5,8 @@
 # 🔑 https://www.gnu.org/licenses/agpl-3.0.html
 
 # ©️ Codrago, 2024-2025
-# This file is a part of Heroku Userbot
-# 🌐 https://github.com/coddrago/Heroku
+# This file is a part of Skyline Userbot
+# 🌐 https://github.com/coddrago/Skyline
 # You can redistribute it and/or modify it under the terms of the GNU AGPLv3
 # 🔑 https://www.gnu.org/licenses/agpl-3.0.html
 
@@ -32,7 +32,7 @@ from skylinetl.extensions.html import CUSTOM_EMOJIS
 from skylinetl.tl.types import Message
 
 from .. import main, utils
-from ..types import HerokuReplyMarkup
+from ..types import SkylineReplyMarkup
 from .types import InlineMessage, InlineUnit
 
 logger = logging.getLogger(__name__)
@@ -51,7 +51,7 @@ class List(InlineUnit):
         ttl: typing.Union[int, bool] = False,
         on_unload: typing.Optional[typing.Callable[[], typing.Any]] = None,
         silent: bool = False,
-        custom_buttons: typing.Optional[HerokuReplyMarkup] = None,
+        custom_buttons: typing.Optional[SkylineReplyMarkup] = None,
     ) -> typing.Union[bool, InlineMessage]:
         """
         Send inline list to chat
@@ -64,9 +64,9 @@ class List(InlineUnit):
                     be bigger, than default one (1 day) and must be either `int` or `False`
         :param on_unload: Callback, called when list is unloaded and/or closed. You can clean up trash
                           or perform another needed action
-        :param manual_security: By default, Heroku will try to inherit inline buttons security from the caller (command)
+        :param manual_security: By default, Skyline will try to inherit inline buttons security from the caller (command)
                                 If you want to avoid this, pass `manual_security=True`
-        :param disable_security: By default, Heroku will try to inherit inline buttons security from the caller (command)
+        :param disable_security: By default, Skyline will try to inherit inline buttons security from the caller (command)
                                  If you want to disable all security checks on this list in particular, pass `disable_security=True`
         :param silent: Whether the list must be sent silently (w/o "Opening list..." message)
         :param custom_buttons: Custom buttons to add above native ones
@@ -312,7 +312,7 @@ class List(InlineUnit):
                         [
                             InlineQueryResultArticle(
                                 id=utils.rand(20),
-                                title="Heroku",
+                                title="Skyline",
                                 input_message_content=InputTextMessageContent(
                                     message_text=self.sanitise_text(unit["strings"][0]),
                                     parse_mode="HTML",

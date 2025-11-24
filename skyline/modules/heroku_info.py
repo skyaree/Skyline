@@ -5,8 +5,8 @@
 # 🔑 https://www.gnu.org/licenses/agpl-3.0.html
 
 # ©️ Codrago, 2024-2025
-# This file is a part of Heroku Userbot
-# 🌐 https://github.com/coddrago/Heroku
+# This file is a part of Skyline Userbot
+# 🌐 https://github.com/coddrago/Skyline
 # You can redistribute it and/or modify it under the terms of the GNU AGPLv3
 # 🔑 https://www.gnu.org/licenses/agpl-3.0.html
 
@@ -34,10 +34,10 @@ import platform as lib_platform
 import getpass
 
 @loader.tds
-class HerokuInfoMod(loader.Module):
+class SkylineInfoMod(loader.Module):
     """Show userbot info"""
 
-    strings = {"name": "HerokuInfo"}
+    strings = {"name": "SkylineInfo"}
 
     def __init__(self):
         self.config = loader.ModuleConfig(
@@ -159,7 +159,7 @@ class HerokuInfoMod(loader.Module):
             platform = platform.replace(emoji, icon)
         return (
             (
-                "🪐 Heroku\n"
+                "🪐 Skyline\n"
                 if self.config["show_skyline"]
                 else ""
             )

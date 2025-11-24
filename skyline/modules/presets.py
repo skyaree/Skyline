@@ -5,8 +5,8 @@
 # 🔑 https://www.gnu.org/licenses/agpl-3.0.html
 
 # ©️ Codrago, 2024-2025
-# This file is a part of Heroku Userbot
-# 🌐 https://github.com/coddrago/Heroku
+# This file is a part of Skyline Userbot
+# 🌐 https://github.com/coddrago/Skyline
 # You can redistribute it and/or modify it under the terms of the GNU AGPLv3
 # 🔑 https://www.gnu.org/licenses/agpl-3.0.html
 
@@ -104,7 +104,7 @@ PRESETS = {
 
 @loader.tds
 class Presets(loader.Module):
-    """Suggests new Heroku users a packs of modules to load"""
+    """Suggests new Skyline users a packs of modules to load"""
 
     strings = {"name": "Presets"}
 

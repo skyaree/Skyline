@@ -5,8 +5,8 @@
 # 🔑 https://www.gnu.org/licenses/agpl-3.0.html
 
 # ©️ Codrago, 2024-2025
-# This file is a part of Heroku Userbot
-# 🌐 https://github.com/coddrago/Heroku
+# This file is a part of Skyline Userbot
+# 🌐 https://github.com/coddrago/Skyline
 # You can redistribute it and/or modify it under the terms of the GNU AGPLv3
 # 🔑 https://www.gnu.org/licenses/agpl-3.0.html
 
@@ -38,7 +38,7 @@ from skylinetl.extensions.html import CUSTOM_EMOJIS
 from skylinetl.tl.types import Message
 
 from .. import main, utils
-from ..types import HerokuReplyMarkup
+from ..types import SkylineReplyMarkup
 from .types import InlineMessage, InlineUnit
 
 logger = logging.getLogger(__name__)
@@ -68,7 +68,7 @@ class Form(InlineUnit):
         self,
         text: str,
         message: typing.Union[Message, int],
-        reply_markup: typing.Optional[HerokuReplyMarkup] = None,
+        reply_markup: typing.Optional[SkylineReplyMarkup] = None,
         *,
         force_me: bool = False,
         always_allow: typing.Optional[typing.List[int]] = None,
@@ -98,9 +98,9 @@ class Form(InlineUnit):
                     be bigger, than default one (1 day) and must be either `int` or `False`
         :param on_unload: Callback, called when form is unloaded and/or closed. You can clean up trash
                           or perform another needed action
-        :param manual_security: By default, Heroku will try to inherit inline buttons security from the caller (command)
+        :param manual_security: By default, Skyline will try to inherit inline buttons security from the caller (command)
                                 If you want to avoid this, pass `manual_security=True`
-        :param disable_security: By default, Heroku will try to inherit inline buttons security from the caller (command)
+        :param disable_security: By default, Skyline will try to inherit inline buttons security from the caller (command)
                                  If you want to disable all security checks on this form in particular, pass `disable_security=True`
         :param photo: Attach a photo to the form. URL must be supplied
         :param gif: Attach a gif to the form. URL must be supplied
@@ -446,8 +446,8 @@ class Form(InlineUnit):
                     [
                         InlineQueryResultPhoto(
                             id=utils.rand(20),
-                            title="Heroku",
-                            description="Heroku",
+                            title="Skyline",
+                            description="Skyline",
                             caption=form.get("text"),
                             parse_mode="HTML",
                             photo_url=form["photo"],
@@ -466,7 +466,7 @@ class Form(InlineUnit):
                     [
                         InlineQueryResultGif(
                             id=utils.rand(20),
-                            title="Heroku",
+                            title="Skyline",
                             caption=form.get("text"),
                             parse_mode="HTML",
                             gif_url=form["gif"],
@@ -485,8 +485,8 @@ class Form(InlineUnit):
                     [
                         InlineQueryResultVideo(
                             id=utils.rand(20),
-                            title="Heroku",
-                            description="Heroku",
+                            title="Skyline",
+                            description="Skyline",
                             caption=form.get("text"),
                             parse_mode="HTML",
                             video_url=form["video"],
@@ -506,8 +506,8 @@ class Form(InlineUnit):
                     [
                         InlineQueryResultDocument(
                             id=utils.rand(20),
-                            title="Heroku",
-                            description="Heroku",
+                            title="Skyline",
+                            description="Skyline",
                             caption=form.get("text"),
                             parse_mode="HTML",
                             document_url=form["file"],
@@ -526,7 +526,7 @@ class Form(InlineUnit):
                             id=utils.rand(20),
                             latitude=form["location"][0],
                             longitude=form["location"][1],
-                            title="Heroku",
+                            title="Skyline",
                             reply_markup=self.generate_markup(
                                 form["uid"],
                             ),
@@ -542,7 +542,7 @@ class Form(InlineUnit):
                             audio_url=form["audio"]["url"],
                             caption=form.get("text"),
                             parse_mode="HTML",
-                            title=form["audio"].get("title", "Heroku"),
+                            title=form["audio"].get("title", "Skyline"),
                             performer=form["audio"].get("performer"),
                             audio_duration=form["audio"].get("duration"),
                             reply_markup=self.generate_markup(
@@ -557,7 +557,7 @@ class Form(InlineUnit):
                     [
                         InlineQueryResultArticle(
                             id=utils.rand(20),
-                            title="Heroku",
+                            title="Skyline",
                             input_message_content=InputTextMessageContent(
                                 message_text=form["text"],
                                 parse_mode="HTML",

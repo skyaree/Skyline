@@ -7,8 +7,8 @@
 # 🔑 https://www.gnu.org/licenses/agpl-3.0.html
 
 # ©️ Codrago, 2024-2025
-# This file is a part of Heroku Userbot
-# 🌐 https://github.com/coddrago/Heroku
+# This file is a part of Skyline Userbot
+# 🌐 https://github.com/coddrago/Skyline
 # You can redistribute it and/or modify it under the terms of the GNU AGPLv3
 # 🔑 https://www.gnu.org/licenses/agpl-3.0.html
 
@@ -56,7 +56,7 @@ def getlines(filename: str, module_globals=None) -> str:
     Update the cache if it doesn't contain an entry for this file already.
 
     Modified version of original `linecache.getlines`, which returns the
-    source code of Heroku modules properly. This is needed for
+    source code of Skyline modules properly. This is needed for
     interactive line debugger in werkzeug web debugger.
     """
 
@@ -106,7 +106,7 @@ def override_text(exception: Exception) -> typing.Optional[str]:
     return None
 
 
-class HerokuException:
+class SkylineException:
     def __init__(
         self,
         message: str,
@@ -128,7 +128,7 @@ class HerokuException:
         tb: traceback.TracebackException,
         stack: typing.Optional[typing.List[inspect.FrameInfo]] = None,
         comment: typing.Optional[typing.Any] = None,
-    ) -> "HerokuException":
+    ) -> "SkylineException":
         def to_hashable(dictionary: dict) -> dict:
             dictionary = dictionary.copy()
             for key, value in dictionary.items():
@@ -300,7 +300,7 @@ class TelegramLogsHandler(logging.Handler):
         self,
         call: BotInlineCall,
         bot: "aiogram.Bot",  # type: ignore  # noqa: F821
-        item: HerokuException,
+        item: SkylineException,
     ):
         chunks = item.message + "\n\n<b>🪐 Full traceback:</b>\n" + item.full_stack
 
@@ -314,7 +314,7 @@ class TelegramLogsHandler(logging.Handler):
         for chunk in chunks[1:]:
             await bot.send_message(chat_id=call.chat_id, text=chunk)
 
-    def _gen_web_debug_button(self, item: HerokuException) -> list:
+    def _gen_web_debug_button(self, item: SkylineException) -> list:
         if not item.sysinfo:
             return []
 
@@ -344,7 +344,7 @@ class TelegramLogsHandler(logging.Handler):
     async def _start_debugger(
         self,
         call: "InlineCall",  # type: ignore  # noqa: F821
-        item: HerokuException,
+        item: SkylineException,
     ):
         if not self.web_debugger:
             self.web_debugger = WebDebugger()
@@ -413,7 +413,7 @@ class TelegramLogsHandler(logging.Handler):
                         ),
                     )
                     for item in self.tg_buff
-                    if isinstance(item[0], HerokuException)
+                    if isinstance(item[0], SkylineException)
                     and (not item[1] or item[1] == client_id or self.force_send_all)
                     and (
                         not isinstance(item[0].sysinfo[1], INTERNET_ERRORS)
@@ -506,7 +506,7 @@ class TelegramLogsHandler(logging.Handler):
                 except Exception:
                     comment = f"{record.msg} {record.args}"
 
-                exc = HerokuException.from_exc_info(
+                exc = SkylineException.from_exc_info(
                     *record.exc_info,
                     stack=record.__dict__.get("stack", None),
                     comment=comment,

@@ -5,8 +5,8 @@
 # 🔑 https://www.gnu.org/licenses/agpl-3.0.html
 
 # ©️ Codrago, 2024-2025
-# This file is a part of Heroku Userbot
-# 🌐 https://github.com/coddrago/Heroku
+# This file is a part of Skyline Userbot
+# 🌐 https://github.com/coddrago/Skyline
 # You can redistribute it and/or modify it under the terms of the GNU AGPLv3
 # 🔑 https://www.gnu.org/licenses/agpl-3.0.html
 
@@ -41,10 +41,10 @@ ALL_INVOKES = [
 
 
 @loader.tds
-class HerokuSettingsMod(loader.Module):
-    """Advanced settings for Heroku Userbot"""
+class SkylineSettingsMod(loader.Module):
+    """Advanced settings for Skyline Userbot"""
 
-    strings = {"name": "HerokuSettings"}
+    strings = {"name": "SkylineSettings"}
 
     def get_watchers(self) -> tuple:
         return [

@@ -5,8 +5,8 @@
 # 🔑 https://www.gnu.org/licenses/agpl-3.0.html
 
 # ©️ Codrago, 2024-2025
-# This file is a part of Heroku Userbot
-# 🌐 https://github.com/coddrago/Heroku
+# This file is a part of Skyline Userbot
+# 🌐 https://github.com/coddrago/Skyline
 # You can redistribute it and/or modify it under the terms of the GNU AGPLv3
 # 🔑 https://www.gnu.org/licenses/agpl-3.0.html
 
@@ -55,7 +55,7 @@ from .pointers import PointerDict, PointerList
 
 __all__ = [
     "JSONSerializable",
-    "HerokuReplyMarkup",
+    "SkylineReplyMarkup",
     "ListLike",
     "Command",
     "StringLoader",
@@ -78,7 +78,7 @@ logger = logging.getLogger(__name__)
 
 
 JSONSerializable = typing.Union[str, int, float, bool, list, dict, None]
-HerokuReplyMarkup = typing.Union[typing.List[typing.List[dict]], typing.List[dict], dict]
+SkylineReplyMarkup = typing.Union[typing.List[typing.List[dict]], typing.List[dict], dict]
 ListLike = typing.Union[list, set, tuple]
 Command = typing.Callable[..., typing.Awaitable[typing.Any]]
 
@@ -494,7 +494,7 @@ class Module:
             if version.__version__ < ver:
                 _raise(
                     RuntimeError(
-                        f"Library requires Heroku version {'{}.{}.{}'.format(*ver)}+"
+                        f"Library requires Skyline version {'{}.{}.{}'.format(*ver)}+"
                     )
                 )
 
@@ -808,7 +808,7 @@ class ModuleConfig(dict):
         if callable(ret):
             try:
                 # Compatibility tweak
-                # does nothing in Heroku
+                # does nothing in Skyline
                 ret = ret(message)
             except Exception:
                 ret = ret()

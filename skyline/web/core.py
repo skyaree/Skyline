@@ -17,8 +17,8 @@
 #    along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 # ©️ Dan Gazizullin, 2021-2023
-# This file is a part of Heroku Userbot
-# 🌐 https://github.com/hikariatama/Heroku
+# This file is a part of Skyline Userbot
+# 🌐 https://github.com/hikariatama/Skyline
 # You can redistribute it and/or modify it under the terms of the GNU AGPLv3
 # 🔑 https://www.gnu.org/licenses/agpl-3.0.html
 
@@ -112,7 +112,7 @@ class Web(root.Web):
         await self.get_url(proxy_pass)
 
         self.running.set()
-        print(f"Heroku Userbot Web Interface running on {self.port}")
+        print(f"Skyline Userbot Web Interface running on {self.port}")
 
     async def stop(self):
         await self.runner.shutdown()

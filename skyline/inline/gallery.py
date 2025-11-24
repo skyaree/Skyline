@@ -5,8 +5,8 @@
 # 🔑 https://www.gnu.org/licenses/agpl-3.0.html
 
 # ©️ Codrago, 2024-2025
-# This file is a part of Heroku Userbot
-# 🌐 https://github.com/coddrago/Heroku
+# This file is a part of Skyline Userbot
+# 🌐 https://github.com/coddrago/Skyline
 # You can redistribute it and/or modify it under the terms of the GNU AGPLv3
 # 🔑 https://www.gnu.org/licenses/agpl-3.0.html
 
@@ -36,7 +36,7 @@ from skylinetl.extensions.html import CUSTOM_EMOJIS
 from skylinetl.tl.types import Message
 
 from .. import main, utils
-from ..types import HerokuReplyMarkup
+from ..types import SkylineReplyMarkup
 from .types import InlineMessage, InlineUnit
 
 logger = logging.getLogger(__name__)
@@ -62,7 +62,7 @@ class Gallery(InlineUnit):
         next_handler: typing.Union[callable, typing.List[str]],
         caption: typing.Union[typing.List[str], str, callable] = "",
         *,
-        custom_buttons: typing.Optional[HerokuReplyMarkup] = None,
+        custom_buttons: typing.Optional[SkylineReplyMarkup] = None,
         force_me: bool = False,
         always_allow: typing.Optional[typing.List[int]] = None,
         manual_security: bool = False,
@@ -91,10 +91,10 @@ class Gallery(InlineUnit):
                         be loaded. Toggle this attribute, if your callback is too slow to load photos
                         in real time
         :param gif: Whether the gallery will be filled with gifs. If you omit this argument and specify
-                    gifs in `next_handler`, Heroku will try to determine the filetype of these images
-        :param manual_security: By default, Heroku will try to inherit inline buttons security from the caller (command)
+                    gifs in `next_handler`, Skyline will try to determine the filetype of these images
+        :param manual_security: By default, Skyline will try to inherit inline buttons security from the caller (command)
                                 If you want to avoid this, pass `manual_security=True`
-        :param disable_security: By default, Heroku will try to inherit inline buttons security from the caller (command)
+        :param disable_security: By default, Skyline will try to inherit inline buttons security from the caller (command)
                                  If you want to disable all security checks on this gallery in particular, pass `disable_security=True`
         :param silent: Whether the gallery must be sent silently (w/o "Opening gallery..." message)
         :return: If gallery is sent, returns :obj:`InlineMessage`, otherwise returns `False`

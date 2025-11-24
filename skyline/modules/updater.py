@@ -5,8 +5,8 @@
 # 🔑 https://www.gnu.org/licenses/agpl-3.0.html
 
 # ©️ Codrago, 2024-2025
-# This file is a part of Heroku Userbot
-# 🌐 https://github.com/coddrago/Heroku
+# This file is a part of Skyline Userbot
+# 🌐 https://github.com/coddrago/Skyline
 # You can redistribute it and/or modify it under the terms of the GNU AGPLv3
 # 🔑 https://www.gnu.org/licenses/agpl-3.0.html
 
@@ -40,7 +40,7 @@ logger = logging.getLogger(__name__)
 
 @loader.tds
 class UpdaterMod(loader.Module):
-    """Updates itself, tracks latest Heroku releases, and notifies you, if update is required"""
+    """Updates itself, tracks latest Skyline releases, and notifies you, if update is required"""
 
     strings = {"name": "Updater"}
 
@@ -49,7 +49,7 @@ class UpdaterMod(loader.Module):
         self.config = loader.ModuleConfig(
             loader.ConfigValue(
                 "GIT_ORIGIN_URL",
-                "https://github.com/coddrago/Heroku",
+                "https://github.com/coddrago/Skyline",
                 lambda: self.strings("origin_cfg_doc"),
                 validator=loader.validators.Link(),
             ),
@@ -132,7 +132,7 @@ class UpdaterMod(loader.Module):
                 try:
                     async with aiohttp.ClientSession() as session:
                         r = await session.get(
-                            url=f"https://api.github.com/repos/coddrago/Heroku/contents/skyline/version.py?ref={version.branch}",
+                            url=f"https://api.github.com/repos/coddrago/Skyline/contents/skyline/version.py?ref={version.branch}",
                             headers={"Accept": "application/vnd.github.v3.raw"}
                         )
                         text = await r.text()
@@ -156,7 +156,7 @@ class UpdaterMod(loader.Module):
                     "https://raw.githubusercontent.com/coddrago/assets/refs/heads/main/skyline/updated.png",
                     caption=self.strings("update_required").format(
                         utils.get_git_hash()[:6],
-                        '<a href="https://github.com/coddrago/Heroku/compare/{}...{}">{}</a>'.format(
+                        '<a href="https://github.com/coddrago/Skyline/compare/{}...{}">{}</a>'.format(
                             utils.get_git_hash()[:12],
                             self.get_latest()[:12],
                             self.get_latest()[:6],
@@ -180,7 +180,7 @@ class UpdaterMod(loader.Module):
                     caption=self.strings("autoupdate_notifier").format(
                         self.get_latest()[:6],
                         self.get_changelog(),
-                        '<a href="https://github.com/coddrago/Heroku/compare/{}...{}">{}</a>'.format(
+                        '<a href="https://github.com/coddrago/Skyline/compare/{}...{}">{}</a>'.format(
                             utils.get_git_hash()[:12],
                             self.get_latest()[:12],
                             "🔎 diff",
@@ -221,7 +221,7 @@ class UpdaterMod(loader.Module):
         with open('CHANGELOG.md', mode='r', encoding='utf-8') as f:
             changelog = f.read().split('##')[1].strip()
         if (await self._client.get_me()).premium:
-            changelog.replace('🌑 Heroku', '<emoji document_id=5192765204898783881>🌘</emoji><emoji document_id=5195311729663286630>🌘</emoji><emoji document_id=5195045669324201904>🌘</emoji>')
+            changelog.replace('🌑 Skyline', '<emoji document_id=5192765204898783881>🌘</emoji><emoji document_id=5195311729663286630>🌘</emoji><emoji document_id=5195045669324201904>🌘</emoji>')
 
         await utils.answer(message, self.strings('changelog').format(changelog))
 
@@ -291,7 +291,7 @@ class UpdaterMod(loader.Module):
                 if self._client.skyline_me.premium
                 and CUSTOM_EMOJIS
                 and isinstance(msg_obj, Message)
-                else "Heroku"
+                else "Skyline"
             ),
         )
 
@@ -517,7 +517,7 @@ class UpdaterMod(loader.Module):
     async def _add_folder(self):
         folders = await self._client(GetDialogFiltersRequest())
 
-        if any(getattr(folder, "title", None) == "Heroku" for folder in folders.filters):
+        if any(getattr(folder, "title", None) == "Skyline" for folder in folders.filters):
             return
 
         try:
@@ -538,7 +538,7 @@ class UpdaterMod(loader.Module):
                     DialogFilter(
                         folder_id,
                         title=TextWithEntities(
-                            text='Heroku',
+                            text='Skyline',
                             entities=[]
                         ),
                         pinned_peers=(
@@ -598,7 +598,7 @@ class UpdaterMod(loader.Module):
             )
         except Exception:
             logger.critical(
-                "Can't create Heroku folder. Possible reasons are:\n"
+                "Can't create Skyline folder. Possible reasons are:\n"
                 "- User reached the limit of folders in Telegram\n"
                 "- User got floodwait\n"
                 "Ignoring error and adding folder addition to ignore list\n"

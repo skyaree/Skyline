@@ -5,8 +5,8 @@
 # 🔑 https://www.gnu.org/licenses/agpl-3.0.html
 
 # ©️ Codrago, 2024-2025
-# This file is a part of Heroku Userbot
-# 🌐 https://github.com/coddrago/Heroku
+# This file is a part of Skyline Userbot
+# 🌐 https://github.com/coddrago/Skyline
 # You can redistribute it and/or modify it under the terms of the GNU AGPLv3
 # 🔑 https://www.gnu.org/licenses/agpl-3.0.html
 
@@ -33,10 +33,10 @@ NUM_ROWS = 5
 
 
 @loader.tds
-class HerokuConfigMod(loader.Module):
-    """Interactive configurator for Heroku Userbot"""
+class SkylineConfigMod(loader.Module):
+    """Interactive configurator for Skyline Userbot"""
 
-    strings = {"name": "HerokuConfig"}
+    strings = {"name": "SkylineConfig"}
 
     def __init__(self):
         self.config = loader.ModuleConfig(

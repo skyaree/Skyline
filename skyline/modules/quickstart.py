@@ -5,8 +5,8 @@
 # 🔑 https://www.gnu.org/licenses/agpl-3.0.html
 
 # ©️ Codrago, 2024-2025
-# This file is a part of Heroku Userbot
-# 🌐 https://github.com/coddrago/Heroku
+# This file is a part of Skyline Userbot
+# 🌐 https://github.com/coddrago/Skyline
 # You can redistribute it and/or modify it under the terms of the GNU AGPLv3
 # 🔑 https://www.gnu.org/licenses/agpl-3.0.html
 
@@ -39,7 +39,7 @@ class Quickstart(loader.Module):
     async def client_ready(self):
         await self.request_join(
             "skyline_talks", 
-            "Heroku help is only available in this chat. By agreeing to join the chat, you agree to the Heroku federation rules and if you violate them, you will be permanently banned."
+            "Skyline help is only available in this chat. By agreeing to join the chat, you agree to the Skyline federation rules and if you violate them, you will be permanently banned."
         )
 
         self.mark = lambda: [

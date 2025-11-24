@@ -1,6 +1,6 @@
 # ©️ Codrago, 2024-2025
-# This file is a part of Heroku Userbot
-# 🌐 https://github.com/coddrago/Heroku
+# This file is a part of Skyline Userbot
+# 🌐 https://github.com/coddrago/Skyline
 # You can redistribute it and/or modify it under the terms of the GNU AGPLv3
 # 🔑 https://www.gnu.org/licenses/agpl-3.0.html
 
@@ -22,12 +22,12 @@ def get_git_info() -> typing.Tuple[str, str]:
     hash_ = get_git_hash()
     return (
         hash_,
-        f"https://github.com/coddrago/Heroku/commit/{hash_}" if hash_ else "",
+        f"https://github.com/coddrago/Skyline/commit/{hash_}" if hash_ else "",
     )
 
 def get_git_hash() -> typing.Union[str, bool]:
     """
-    Get current Heroku git hash
+    Get current Skyline git hash
     :return: Git commit hash
     """
     try:
@@ -38,11 +38,11 @@ def get_git_hash() -> typing.Union[str, bool]:
 
 def get_commit_url() -> str:
     """
-    Get current Heroku git commit url
+    Get current Skyline git commit url
     :return: Git commit url
     """
     try:
         hash_ = get_git_hash()
-        return f'<a href="https://github.com/coddrago/Heroku/commit/{hash_}">#{hash_[:7]}</a>'
+        return f'<a href="https://github.com/coddrago/Skyline/commit/{hash_}">#{hash_[:7]}</a>'
     except Exception:
         return "Unknown"

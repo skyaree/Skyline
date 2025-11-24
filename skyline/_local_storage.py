@@ -7,8 +7,8 @@
 # 🔑 https://www.gnu.org/licenses/agpl-3.0.html
 
 # ©️ Codrago, 2024-2025
-# This file is a part of Heroku Userbot
-# 🌐 https://github.com/coddrago/Heroku
+# This file is a part of Skyline Userbot
+# 🌐 https://github.com/coddrago/Skyline
 # You can redistribute it and/or modify it under the terms of the GNU AGPLv3
 # 🔑 https://www.gnu.org/licenses/agpl-3.0.html
 
@@ -152,10 +152,10 @@ class RemoteStorage:
                 url,
                 auth=(tuple(auth.split(":", 1)) if auth else None),
                 headers={
-                    "User-Agent": "Heroku Userbot",
-                    "X-Heroku-Version": ".".join(map(str, __version__)),
-                    "X-Heroku-Commit-SHA": utils.get_git_hash(),
-                    "X-Heroku-User": str(self._client.tg_id),
+                    "User-Agent": "Skyline Userbot",
+                    "X-Skyline-Version": ".".join(map(str, __version__)),
+                    "X-Skyline-Commit-SHA": utils.get_git_hash(),
+                    "X-Skyline-User": str(self._client.tg_id),
                 },
             )
             r.raise_for_status()
