@@ -1,8 +1,4 @@
-
-
 import re
-
-
 def compat(code: str) -> str:
     """
     Reformats modules, built for GeekTG to work with Skyline

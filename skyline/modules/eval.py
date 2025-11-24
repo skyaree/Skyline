@@ -1,5 +1,3 @@
-
-
 import contextlib
 import itertools
 import os
@@ -8,41 +6,31 @@ import sys
 import tempfile
 import typing
 from types import ModuleType
-
 import skylinetl
 from skylinetl.errors.rpcerrorlist import MessageIdInvalidError
 from skylinetl.sessions import StringSession
 from skylinetl.tl.types import Message
 from meval import meval
 from io import StringIO
-
 from .. import loader, main, utils
 from ..log import SkylineException
-
-
 class Brainfuck:
     def __init__(self, memory_size: int = 30000):
         if memory_size < 0:
             raise ValueError("memory size cannot be negative")
-
         self._data = [0] * memory_size
         self.out = ""
         self.error = None
-
     @property
     def data(self):
         return self._data
-
     def run(self, code: str) -> str:
         self.out = ""
         had_error = self._eval(code)
-
         if had_error:
             return ""
-
         self._interpret(code)
         return self.out
-
     def _report_error(
         self,
         message: str,
@@ -54,20 +42,15 @@ class Brainfuck:
             if line is not None and column is not None
             else ""
         )
-
     def _eval(self, source: str):
         line = col = 0
-
         stk = []
-
         loop_open = False
-
         for c in source:
             if c == "[":
                 if loop_open:
                     self._report_error("unexpected token '['", line, col)
                     return True
-
                 loop_open = True
                 stk.append("[")
             elif c == "]":
@@ -75,48 +58,37 @@ class Brainfuck:
                 if len(stk) == 0:
                     self._report_error("unexpected token ']'", line, col)
                     return True
-
                 stk.pop()
             elif c == "\n":
                 line += 1
                 col = -1
-
             col += 1
-
         if len(stk) != 0:
             self._report_error("unmatched brackets")
             return True
-
         return False
-
     def _interpret(self, source: str):
         line = col = ptr = current = 0
-
         while current < len(source):
             if source[current] == ">":
                 if ptr == (len(self.data) - 1):
                     self._report_error("pointer out of range", line, col)
                     return True
-
                 ptr += 1
             elif source[current] == "<":
                 if ptr == 0:
                     self._report_error("pointer out of range", line, col)
                     return True
-
                 ptr -= 1
             elif source[current] == "+":
                 if self.data[ptr] >= 2**32:
                     self._report_error("cell overflow")
                     return True
-
                 self.data[ptr] += 1
-
             elif source[current] == "-":
                 if self.data[ptr] == 0:
                     self._report_error("cell underflow")
                     return True
-
                 self.data[ptr] -= 1
             elif source[current] == ".":
                 self.out += chr(self.data[ptr])
@@ -131,19 +103,13 @@ class Brainfuck:
             elif source[current] == "\n":
                 line += 1
                 col = -1
-
             col += 1
             current += 1
-
         return False
-
-
 @loader.tds
 class Evaluator(loader.Module):
     """Evaluates code in various languages"""
-
     strings = {"name": "Evaluator"}
-
     @loader.command(alias="eval")
     async def e(self, message: Message):
         try:
@@ -155,10 +121,8 @@ class Evaluator(loader.Module):
                     **await self.getattrs(message),
                 )
             print_output = output_print.getvalue()
-
         except Exception:
             item = SkylineException.from_exc_info(*sys.exc_info())
-
             await utils.answer(
                 message,
                 self.strings("err").format(
@@ -176,13 +140,10 @@ class Evaluator(loader.Module):
                     ),
                 ),
             )
-
             return
-
         if callable(getattr(result, "stringify", None)):
             with contextlib.suppress(Exception):
                 result = str(result.stringify())
-
         with contextlib.suppress(MessageIdInvalidError):
             await utils.answer(
                 message,
@@ -200,7 +161,6 @@ class Evaluator(loader.Module):
                     utils.escape_html(self.censor(print_output))
                     ) if print_output else ""),
             )
-
     @loader.command()
     async def ecpp(self, message: Message, c: bool = False):
         try:
@@ -217,7 +177,6 @@ class Evaluator(loader.Module):
                 ),
             )
             return
-
         code = utils.get_args_raw(message)
         message = await utils.answer(message, self.strings("compiling"))
         error = False
@@ -225,7 +184,6 @@ class Evaluator(loader.Module):
             file = os.path.join(tmpdir, "code.cpp")
             with open(file, "w") as f:
                 f.write(code)
-
             try:
                 result = subprocess.check_output(
                     ["gcc" if c else "g++", "-o", "code", "code.cpp"],
@@ -235,7 +193,6 @@ class Evaluator(loader.Module):
             except subprocess.CalledProcessError as e:
                 result = e.output.decode()
                 error = True
-
             if not result:
                 try:
                     result = subprocess.check_output(
@@ -246,7 +203,6 @@ class Evaluator(loader.Module):
                 except subprocess.CalledProcessError as e:
                     result = e.output.decode()
                     error = True
-
         with contextlib.suppress(MessageIdInvalidError):
             await utils.answer(
                 message,
@@ -258,11 +214,9 @@ class Evaluator(loader.Module):
                     utils.escape_html(result),
                 ),
             )
-
     @loader.command()
     async def ec(self, message: Message):
         await self.ecpp(message, c=True)
-
     @loader.command()
     async def enode(self, message: Message):
         try:
@@ -279,14 +233,12 @@ class Evaluator(loader.Module):
                 ),
             )
             return
-
         code = utils.get_args_raw(message)
         error = False
         with tempfile.TemporaryDirectory() as tmpdir:
             file = os.path.join(tmpdir, "code.js")
             with open(file, "w") as f:
                 f.write(code)
-
             try:
                 result = subprocess.check_output(
                     ["node", "code.js"],
@@ -296,7 +248,6 @@ class Evaluator(loader.Module):
             except subprocess.CalledProcessError as e:
                 result = e.output.decode()
                 error = True
-
         with contextlib.suppress(MessageIdInvalidError):
             await utils.answer(
                 message,
@@ -308,7 +259,6 @@ class Evaluator(loader.Module):
                     utils.escape_html(result),
                 ),
             )
-
     @loader.command()
     async def ephp(self, message: Message):
         try:
@@ -325,14 +275,12 @@ class Evaluator(loader.Module):
                 ),
             )
             return
-
         code = utils.get_args_raw(message)
         error = False
         with tempfile.TemporaryDirectory() as tmpdir:
             file = os.path.join(tmpdir, "code.php")
             with open(file, "w") as f:
                 f.write(f"<?php {code} ?>")
-
             try:
                 result = subprocess.check_output(
                     ["php", "code.php"],
@@ -342,7 +290,6 @@ class Evaluator(loader.Module):
             except subprocess.CalledProcessError as e:
                 result = e.output.decode()
                 error = True
-
         with contextlib.suppress(MessageIdInvalidError):
             await utils.answer(
                 message,
@@ -354,7 +301,6 @@ class Evaluator(loader.Module):
                     utils.escape_html(result),
                 ),
             )
-
     @loader.command()
     async def eruby(self, message: Message):
         try:
@@ -371,14 +317,12 @@ class Evaluator(loader.Module):
                 ),
             )
             return
-
         code = utils.get_args_raw(message)
         error = False
         with tempfile.TemporaryDirectory() as tmpdir:
             file = os.path.join(tmpdir, "code.rb")
             with open(file, "w") as f:
                 f.write(code)
-
             try:
                 result = subprocess.check_output(
                     ["ruby", "code.rb"],
@@ -388,7 +332,6 @@ class Evaluator(loader.Module):
             except subprocess.CalledProcessError as e:
                 result = e.output.decode()
                 error = True
-
         with contextlib.suppress(MessageIdInvalidError):
             await utils.answer(
                 message,
@@ -400,7 +343,6 @@ class Evaluator(loader.Module):
                     utils.escape_html(result),
                 ),
             )
-
     @loader.command()
     async def ebf(self, message: Message):
         code = utils.get_args_raw(message)
@@ -410,21 +352,16 @@ class Evaluator(loader.Module):
             debug = True
         else:
             debug = False
-
         error = False
-
         bf = Brainfuck()
         result = bf.run(code)
         if bf.error:
             result = bf.error
             error = True
-
         if not result:
             result = "<empty>"
-
         if debug:
             result += "\n\n" + " | ".join(map(str, filter(lambda x: x, bf.data)))
-
         with contextlib.suppress(MessageIdInvalidError):
             await utils.answer(
                 message,
@@ -436,32 +373,24 @@ class Evaluator(loader.Module):
                     utils.escape_html(result),
                 ),
             )
-
     def censor(self, ret: str) -> str:
         ret = ret.replace(str(self._client.skyline_me.phone), "&lt;phone&gt;")
-
         if redis := os.environ.get("REDIS_URL") or main.get_config_key("redis_uri"):
             ret = ret.replace(redis, f'redis://{"*" * 26}')
-
         if db := os.environ.get("DATABASE_URL") or main.get_config_key("db_uri"):
             ret = ret.replace(db, f'postgresql://{"*" * 26}')
-
         if btoken := self._db.get("skyline.inline", "bot_token", False):
             ret = ret.replace(
                 btoken,
                 f'{btoken.split(":")[0]}:{"*" * 26}',
             )
-
         if htoken := self.lookup("loader").get("token", False):
             ret = ret.replace(htoken, f'eugeo_{"*" * 26}')
-
         ret = ret.replace(
             StringSession.save(self._client.session),
             "StringSession(**************************)",
         )
-
         return ret
-
     async def getattrs(self, message: Message) -> dict:
         reply = await message.get_reply_message()
         return {
@@ -487,7 +416,6 @@ class Evaluator(loader.Module):
             **self.get_sub(skylinetl.tl.types),
             **self.get_sub(skylinetl.tl.functions),
         }
-
     def get_sub(self, obj: typing.Any, _depth: int = 1) -> dict:
         """Get all callable capitalised objects in an object recursively, ignoring _*"""
         return {
@@ -514,4 +442,3 @@ class Evaluator(loader.Module):
                 )
             ),
         }
-        

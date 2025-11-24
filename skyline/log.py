@@ -1,7 +1,4 @@
 """Main logging part"""
-
-
-
 import asyncio
 import contextlib
 import inspect
@@ -13,7 +10,6 @@ import sys
 import traceback
 import typing
 from logging.handlers import RotatingFileHandler
-
 import skylinetl
 from aiogram.exceptions import TelegramNetworkError, TelegramRetryAfter
 from skylinetl.errors import PersistentTimestampOutdatedError
@@ -21,31 +17,23 @@ from skylinetl.errors.rpcbaseerrors import (
     ServerError,
     RPCError
 )
-
 from . import utils
 from .tl_cache import CustomTelegramClient
 from .types import BotInlineCall, Module, CoreOverwriteError
 from .web.debugger import WebDebugger
-
 INTERNET_ERRORS = (
     TelegramNetworkError, asyncio.exceptions.TimeoutError,
     ServerError, PersistentTimestampOutdatedError
 )
-
-
 old = linecache.getlines
-
-
 def getlines(filename: str, module_globals=None) -> str:
     """
     Get the lines for a Python source file from the cache.
     Update the cache if it doesn't contain an entry for this file already.
-
     Modified version of original `linecache.getlines`, which returns the
     source code of Skyline modules properly. This is needed for
     interactive line debugger in werkzeug web debugger.
     """
-
     try:
         if filename.startswith("<") and filename.endswith(">"):
             module = filename[1:-1].split(maxsplit=1)[-1]
@@ -58,40 +46,25 @@ def getlines(filename: str, module_globals=None) -> str:
                 )
     except Exception:
         logging.debug("Can't get lines for %s", filename, exc_info=True)
-
     return old(filename, module_globals)
-
-
 linecache.getlines = getlines
-
-
 def override_text(exception: Exception) -> typing.Optional[str]:
     """Returns error-specific description if available, else `None`"""
-
     if isinstance(exception, (TelegramNetworkError, asyncio.exceptions.TimeoutError)):
         return "✈️ <b>You have problems with internet connection on your server.</b>"
-
     if isinstance(exception, PersistentTimestampOutdatedError):
         return "✈️ <b>Telegram has problems with their datacenters.</b>"
-
     if isinstance(exception, CoreOverwriteError):
         return f"⚠️ {str(exception)}"
-
     if isinstance(exception, ServerError):
         return "📡 <b>Telegram servers are currently experiencing issues. Please try again later.</b>"
-
     if isinstance(exception, RPCError) and "TRANSLATION_TIMEOUT" in str(exception):
         return ("🕓 <b>Telegram translation service timed out. Please try again later.</b>")
-
     if isinstance(exception, ModuleNotFoundError):
         return f"📦 {traceback.format_exception_only(type(exception), exception)[0].split(':')[1].strip()}"
-    
     if isinstance(exception, TelegramRetryAfter):
         return f"✋ <b>Bot is hitting limits on {type(exception.method).__name__!r} method and got {exception.retry_after} seconds floodwait</b>"
-
     return None
-
-
 class SkylineException:
     def __init__(
         self,
@@ -105,7 +78,6 @@ class SkylineException:
         self.full_stack = full_stack
         self.sysinfo = sysinfo
         self.debug_url = None
-
     @classmethod
     def from_exc_info(
         cls,
@@ -138,24 +110,18 @@ class SkylineException:
                             dictionary[key] = str(value)
                     except Exception:
                         dictionary[key] = f"<{value.__class__.__name__}>"
-
             return dictionary
-
         full_traceback = traceback.format_exc().replace(
             "Traceback (most recent call last):\n",
             "",
         )
-
         line_regex = re.compile(r'  File "(.*?)", line ([0-9]+), in (.+)')
-
         def format_line(line: str) -> str:
             filename_, lineno_, name_ = line_regex.search(line).groups()
-
             return (
                 f"👉 <code>{utils.escape_html(filename_)}:{lineno_}</code> <b>in</b>"
                 f" <code>{utils.escape_html(name_)}</code>"
             )
-
         filename, lineno, name = next(
             (
                 line_regex.search(line).groups()
@@ -164,7 +130,6 @@ class SkylineException:
             ),
             (None, None, None),
         )
-
         full_traceback = "\n".join(
             [
                 (
@@ -175,9 +140,7 @@ class SkylineException:
                 for line in full_traceback.splitlines()
             ]
         )
-
         caller = utils.find_caller(stack or inspect.stack())
-
         return cls(
             message=override_text(exc_value)
             or (
@@ -217,8 +180,6 @@ class SkylineException:
             full_stack=full_traceback,
             sysinfo=(exc_type, exc_value, tb),
         )
-
-
 class TelegramLogsHandler(logging.Handler):
     """
     Keeps 2 buffers.
@@ -228,7 +189,6 @@ class TelegramLogsHandler(logging.Handler):
     truncate to make them 100 together,
     first trimming handled then unused.
     """
-
     def __init__(self, targets: list, capacity: int):
         super().__init__(0)
         self.buffer = []
@@ -244,31 +204,23 @@ class TelegramLogsHandler(logging.Handler):
         self.capacity = capacity
         self.lvl = logging.NOTSET
         self._send_lock = asyncio.Lock()
-
     def install_tg_log(self, mod: Module):
         if getattr(self, "_task", False):
             self._task.cancel()
-
         self._mods[mod.tg_id] = mod
-
         if mod.db.get(__name__, "debugger", False):
             self.web_debugger = WebDebugger()
-
         self._task = asyncio.ensure_future(self.queue_poller())
-
     async def queue_poller(self):
         while True:
             with contextlib.suppress(Exception):
                 await self.sender()
             await asyncio.sleep(3)
-
     def setLevel(self, level: int):
         self.lvl = level
-
     def dump(self):
         """Return a list of logging entries"""
         return self.handledbuffer + self.buffer
-
     def dumps(
         self,
         lvl: int = 0,
@@ -281,7 +233,6 @@ class TelegramLogsHandler(logging.Handler):
             if record.levelno >= lvl
             and (not record.skyline_caller or client_id == record.skyline_caller)
         ]
-
     async def _show_full_trace(
         self,
         call: BotInlineCall,
@@ -289,29 +240,22 @@ class TelegramLogsHandler(logging.Handler):
         item: SkylineException,
     ):
         chunks = item.message + "\n\n<b>🪐 Full traceback:</b>\n" + item.full_stack
-
         chunks = list(utils.smart_split(*skylinetl.extensions.html.parse(chunks), 4096))
-
         await call.edit(
             chunks[0],
             reply_markup=self._gen_web_debug_button(item),
         )
-
         for chunk in chunks[1:]:
             await bot.send_message(chat_id=call.chat_id, text=chunk)
-
     def _gen_web_debug_button(self, item: SkylineException) -> list:
         if not item.sysinfo:
             return []
-
         if not (url := item.debug_url):
             try:
                 url = self.web_debugger.feed(*item.sysinfo)
             except Exception:
                 url = None
-
             item.debug_url = url
-
         return [
             (
                 {
@@ -326,7 +270,6 @@ class TelegramLogsHandler(logging.Handler):
                 }
             )
         ]
-
     async def _start_debugger(
         self,
         call: "InlineCall",  # type: ignore  # noqa: F821
@@ -335,15 +278,12 @@ class TelegramLogsHandler(logging.Handler):
         if not self.web_debugger:
             self.web_debugger = WebDebugger()
             await self.web_debugger.proxy_ready.wait()
-
         url = self.web_debugger.feed(*item.sysinfo)
         item.debug_url = url
-
         await call.edit(
             item.message,
             reply_markup=self._gen_web_debug_button(item),
         )
-
         self.inline.bot(await call.answer(
             (
                 "Web debugger started. You can get PIN using .debugger command. \n⚠️"
@@ -351,10 +291,8 @@ class TelegramLogsHandler(logging.Handler):
             ),
             show_alert=True,
         ))
-
     def get_logid_by_client(self, client_id: int) -> int:
         return self._mods[client_id].logchat
-
     async def sender(self):
         async with self._send_lock:
             self._queue = {
@@ -377,7 +315,6 @@ class TelegramLogsHandler(logging.Handler):
                 )
                 for client_id in self._mods
             }
-
             self._exc_queue = {
                 client_id: [
                     self._mods[client_id].inline.bot.send_message(
@@ -412,17 +349,13 @@ class TelegramLogsHandler(logging.Handler):
                 ]
                 for client_id in self._mods
             }
-
             for exceptions in self._exc_queue.values():
                 for exc in exceptions:
                     asyncio.create_task(self.avoid_floodwait(exc))
-
             self.tg_buff = []
-
             for client_id in self._mods:
                 if client_id not in self._queue:
                     continue
-
                 if len(self._queue[client_id]) > 5:
                     logfile = io.BytesIO(
                         "".join(self._queue[client_id]).encode("utf-8")
@@ -437,10 +370,8 @@ class TelegramLogsHandler(logging.Handler):
                             " messages</b>"
                         ),
                     )
-
                     self._queue[client_id] = []
                     continue
-
                 while self._queue[client_id]:
                     if chunk := self._queue[client_id].pop(0):
                         asyncio.ensure_future(
@@ -458,7 +389,6 @@ class TelegramLogsHandler(logging.Handler):
             await self.avoid_floodwait(exc)
         except RuntimeError:
             pass
-
     def emit(self, record: logging.LogRecord):
         try:
             caller = next(
@@ -474,14 +404,11 @@ class TelegramLogsHandler(logging.Handler):
                 ),
                 False,
             )
-
             if not isinstance(caller, int):
                 caller = None
         except Exception:
             caller = None
-
         record.skyline_caller = caller
-
         if record.levelno >= self.tg_level:
             if record.exc_info:
                 try:
@@ -491,13 +418,11 @@ class TelegramLogsHandler(logging.Handler):
                         comment = str(record.msg)
                 except Exception:
                     comment = f"{record.msg} {record.args}"
-
                 exc = SkylineException.from_exc_info(
                     *record.exc_info,
                     stack=record.__dict__.get("stack", None),
                     comment=comment,
                 )
-
                 if not self.ignore_common or all(
                     field not in exc.message
                     for field in [
@@ -513,15 +438,12 @@ class TelegramLogsHandler(logging.Handler):
                         caller,
                     )
                 ]
-
         if len(self.buffer) + len(self.handledbuffer) >= self.capacity:
             if self.handledbuffer:
                 del self.handledbuffer[0]
             else:
                 del self.buffer[0]
-
         self.buffer.append(record)
-
         if record.levelno >= self.lvl >= 0:
             self.acquire()
             try:
@@ -529,7 +451,6 @@ class TelegramLogsHandler(logging.Handler):
                     for target in self.targets:
                         if record.levelno >= target.level:
                             target.handle(precord)
-
                 self.handledbuffer = (
                     self.handledbuffer[-(self.capacity - len(self.buffer)) :]
                     + self.buffer
@@ -537,8 +458,6 @@ class TelegramLogsHandler(logging.Handler):
                 self.buffer = []
             finally:
                 self.release()
-
-
 _main_formatter = logging.Formatter(
     fmt="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
     datefmt="%Y-%m-%d %H:%M:%S",
@@ -549,7 +468,6 @@ _tg_formatter = logging.Formatter(
     datefmt=None,
     style="%",
 )
-
 rotating_handler = RotatingFileHandler(
     filename="skyline.log",
     mode="a",
@@ -558,16 +476,12 @@ rotating_handler = RotatingFileHandler(
     encoding="utf-8",
     delay=0,
 )
-
 rotating_handler.setFormatter(_main_formatter)
-
-
 def init():
     class NoFetchUpdatesFilter(logging.Filter):
         def filter(self, record: logging.LogRecord) -> bool:
             msg = record.getMessage()
             return "Failed to fetch updates" not in msg and "Sleep" not in msg
-    
     logging.getLogger("aiogram.dispatcher").addFilter(NoFetchUpdatesFilter())
     handler = logging.StreamHandler()
     handler.setLevel(logging.INFO)

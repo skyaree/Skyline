@@ -1,22 +1,13 @@
-
-
 import asyncio
 import functools
 import logging
-
 from math import ceil
-
 from .. import loader, utils
 from ..inline.types import BotInlineMessage, InlineCall
 from ..types import Message
-
 logger = logging.getLogger(__name__)
-
-
 NUM_ROWS = 2
-
 ROW_SIZE = 4
-
 PRESETS = {
     "fun": [
         "https://github.com/amm1edev/ame_repo/raw/refs/heads/main/aniquotes.py",
@@ -90,14 +81,10 @@ PRESETS = {
         "https://github.com/amm1edev/ame_repo/raw/refs/heads/main/dl_yt_previews.py",
     ],
 }
-
-
 @loader.tds
 class Presets(loader.Module):
     """Suggests new Skyline users a packs of modules to load"""
-
     strings = {"name": "Presets"}
-
     async def client_ready(self):
         self._markup = utils.chunks(
             [
@@ -110,13 +97,10 @@ class Presets(loader.Module):
             ],
             1,
         )
-
         if self.get("sent"):
             return
-
         self.set("sent", True)
         await self._menu()
-
     async def _menu(self):
         await self.inline.bot.send_photo(
             self._client.tg_id,
@@ -124,10 +108,8 @@ class Presets(loader.Module):
             caption=self.strings('welcome'),
             reply_markup=self.inline.generate_markup(self._markup),
         )
-
     async def _back(self, call: InlineCall):
         await call.edit(self.strings("welcome"), reply_markup=self._markup)
-
     async def _choose_menu(self, call: InlineCall, page: int = 0, preset: str = "", to_remove: list | None = None):
         if not preset:
             return
@@ -136,8 +118,6 @@ class Presets(loader.Module):
         to_install = PRESETS[preset].copy()
         for index in sorted(to_remove, reverse=True):
             to_install.pop(index)
-
-
         kb = []
         for mod_row in utils.chunks(
             to_buttons[page * NUM_ROWS * ROW_SIZE : (page + 1) * NUM_ROWS * ROW_SIZE],
@@ -157,7 +137,6 @@ class Presets(loader.Module):
                     }
                 )
             kb += [row]
-
         if len(to_buttons) > NUM_ROWS * ROW_SIZE:
             kb += self.inline.build_pagination(
                 callback=functools.partial(
@@ -166,7 +145,6 @@ class Presets(loader.Module):
                 total_pages=ceil(len(to_buttons) / (NUM_ROWS * ROW_SIZE)),
                 current_page=page + 1,
             )
-
         kb += [
             [
                 {"text": self.strings("back"), "callback": self._back},
@@ -177,7 +155,6 @@ class Presets(loader.Module):
                 },
             ]
         ]
-
         await call.edit(
             self.strings("preset").format(
                 self.strings(f"_{preset}_title"),
@@ -211,16 +188,12 @@ class Presets(loader.Module):
             ),
             reply_markup=kb,
         )
-        
-
     async def _switch(self, call: InlineCall, page: int, preset: str, index_of_module: int, to_remove: list):
         if index_of_module in to_remove:
             to_remove.remove(index_of_module)
         else:
             to_remove.append(index_of_module)
-        
         await self._choose_menu(call, page, preset, to_remove)
-
     async def _install(self, call: InlineCall, preset: str, modules: list):
         await call.delete()
         m = await self._client.send_message(
@@ -240,21 +213,16 @@ class Presets(loader.Module):
                 await self.lookup("loader").download_and_install(module, None)
             except Exception:
                 logger.exception("Failed to install module %s", module)
-
             await asyncio.sleep(1)
-
         if self.lookup("loader").fully_loaded:
             self.lookup("loader").update_modules_in_db()
-
         await m.edit(self.strings("installed").format(preset))
         await self._menu()
-
     def _is_installed(self, link: str) -> bool:
         return any(
             link.strip().lower() == installed.strip().lower()
             for installed in self.lookup("loader").get("loaded_modules", {}).values()
         )
-
     async def _preset(self, call: InlineCall, preset: str):
         await call.edit(
             self.strings("preset").format(
@@ -293,13 +261,10 @@ class Presets(loader.Module):
                 },
             ],
         )
-
     async def aiogram_watcher(self, message: BotInlineMessage):
         if message.text != "/presets" or message.from_user.id != self._client.tg_id:
             return
-
         await self._menu()
-
     @loader.command(ru_doc='| Пакеты модулей для загрузки', ua_doc='| Пакети модулів для завантаження', de_doc='| Pakete mit Modulen zum Laden')
     async def presets(self, message: Message):
         """| Packs of modules to load"""

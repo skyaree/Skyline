@@ -2,10 +2,7 @@ import typing
 import logging
 import asyncio
 import re
-
-
 logger = logging.getLogger(__name__)
-
 class SSHTunnel():
     def __init__(
         self,
@@ -24,10 +21,8 @@ class SSHTunnel():
         self.current_command_index = 0
         self._ssh_task = None
         self._all_commands_failed = False
-
     async def start(self):
         self._ssh_task = asyncio.create_task(self._run_ssh_tunnel())
-
     async def stop(self):
         if self._ssh_task:
             self._ssh_task.cancel()
@@ -35,7 +30,6 @@ class SSHTunnel():
                 await self._ssh_task
             except asyncio.CancelledError:
                 logger.debug("SSH task was cancelled")
-
         if self.process:
             logger.debug("Stopping SSH tunnel...")
             try:
@@ -45,7 +39,6 @@ class SSHTunnel():
                 logger.warning(f"Failed to terminate SSH process: {e}")
             finally:
                 self.process = None
-
     async def wait_for_url(self, timeout: float) -> typing.Optional[str]:
         if self._all_commands_failed:
             return None
@@ -55,7 +48,6 @@ class SSHTunnel():
         except asyncio.TimeoutError:
             logger.warning("Timeout waiting for tunnel URL.")
             return None
-
     async def _run_ssh_tunnel(self):
         if not self.ssh_commands:
             logger.debug("SSH command list is empty")
@@ -71,23 +63,18 @@ class SSHTunnel():
                         stdout=asyncio.subprocess.PIPE,
                         stderr=asyncio.subprocess.PIPE,
                     )
-
                     logger.debug(f"SSH tunnel started with PID: {self.process.pid}")
                     asyncio.create_task(self._read_stream_and_process(self.process.stdout, regex_pattern))
-                    
                     await self.process.wait()
-                    
                     if self._tunnel_url is None:
                         logger.warning("SSH tunnel disconnected without providing a URL.")
                     else:
                         logger.info("SSH tunnel disconnected, but URL was obtained. Exiting SSH Tunnel attempts.")
                         return
-
                 except Exception as e:
                     logger.error(
                         f"Failed to start SSH tunnel with command: {ssh_command}. Error: {e}"
                     )
-                    
                 finally:
                     if self.process:
                         self.process = None
@@ -103,7 +90,6 @@ class SSHTunnel():
             if self._tunnel_url is None and self._all_commands_failed:
                 logger.error("All SSH commands failed.")
                 self._url_available.set()
-
     async def _read_stream_and_process(self, stream, regex_pattern: str):
         try:
             while True:
@@ -114,7 +100,6 @@ class SSHTunnel():
                 await self._process_stream(line_str, regex_pattern)
         except Exception as e:
             logger.exception(f"Error reading and processing stream: {e}")
-
     async def _process_stream(self, stdout_line: str, regex_pattern: str):
         logger.debug(stdout_line)
         match = re.search(regex_pattern, stdout_line)

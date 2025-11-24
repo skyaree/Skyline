@@ -93,7 +93,6 @@ skyline_security:
   _cmd_doc_newsgroup: "<name> - Create new security group"
   _cmd_doc_sgroupadd: "<name> [user or reply] - Add user to security group"
   _cmd_doc_sgroupdel: "<name> [user or reply] - Remove user from security group"
-
 skyline_settings:
   name: "SkylineSettings"
   watchers: "<emoji document_id=5424885441100782420>👀</emoji> <b>Watchers:</b>\n\n<blockquote expandable><b>{}</b></blockquote>"
@@ -166,7 +165,6 @@ skyline_settings:
   core_protection_e_btn: "🔓 Restore core protection"
   core_protection_removed: "🔓 <b>Core protection removed successfully</b>"
   core_protection_enabled: "🔓 <b>Core protection enabled successfully</b>"
-
 terminal:
   name: "Terminal"
   fw_protect: "How long to wait in seconds between edits in commands"
@@ -189,7 +187,6 @@ terminal:
   _cmd_doc_terminal: "<command> - Execute bash command"
   _cmd_doc_terminate: "[-f to force kill] - Use in reply to send SIGTERM to a process"
   _cls_doc: "Runs commands"
-
 skyline_web:
   privacy_leak: "⚠️ <b>This command gives access to your Skyline web interface. It's not recommended to run it in public group chats. Consider using it in <a href='tg://openmessage?user_id={}'>Saved messages</a>. Type</b> <code>{}proxypass force_insecure</code> <b>to ignore this warning</b>"
   privacy_leak_nowarn: "⚠️ <b>This command gives access to your Skyline web interface. It's not recommended to run it in public group chats. Consider using it in <a href='tg://openmessage?user_id={}'>Saved messages</a>.</b>"
@@ -221,7 +218,6 @@ skyline_web:
   2fa_enabled: "You have two-factor authentication enabled. Enter the password."
   request_code: "🔃 Request the code again"
   code_expired: "The code has expired."
-
 skyline_backup:
   period: "⌚️ <b>The unit «ALPHA»</b> creates regular backups. These settings can be changed later.\n\nPlease select the backup frequency\n\n<b>🚫 It is thus impossible to restore modules downloaded from files with the .lm command! Be careful and do .backupmods before restoring.</b>"
   saved: "✅ The periodicity is saved! It can be changed with <code>{prefix}set_backup_period</code>"
@@ -250,7 +246,6 @@ skyline_backup:
   _cmd_doc_set_backup_period: "<time in hours> - Set the frequency of backups"
   _cmd_doc_backupall: "Creates a general backup copy (modules + database)"
   _cmd_doc_restoreall: "Restores a common backup (base + modules)"
-
 presets:
   name: "Presets"
   _fun_title: "🪩 Entertainment modules"
@@ -270,7 +265,6 @@ presets:
   installed: "<emoji document_id=5436040291507247633>🎉</emoji> <b>Preset</b> <code>{}</code> <b>installed!</b>"
   already_installed: "✅ [Installed]"
   _cls_doc: "Suggests new Skyline users a packs of modules to load"
-
 settings:
   name: "Settings"
   vds: "💎 VDS"
@@ -324,7 +318,6 @@ settings:
   _cmd_doc_unblacklistuser: "[user_id] - Allow this user to run permitted commands"
   _cfg_nonstandart_prefixes: "Allow non-standart prefixes like flags or more than one symbol"
   _cls_doc: "Control core userbot settings"
-
 skyline_config:
   name: "SkylineConfig"
   choose_core: "⚙️ <b>Choose a category</b>"
@@ -362,7 +355,6 @@ skyline_config:
   _cmd_doc_config: "Configure modules"
   _cmd_doc_fconfig: "<module_name> <property_name> <config_value> - set the config value for the module"
   _cls_doc: "Interactive configurator for Skyline Userbot"
-
 inline_stuff:
   name: "InlineStuff"
   bot_username_invalid: "<emoji document_id=5210952531676504517>🚫</emoji> <b>Specified bot username is invalid. It must end with</b> <code>bot</code> <b>and contain at least 4 symbols</b>"
@@ -375,7 +367,6 @@ inline_stuff:
   prefix_reset: "🔀 Prefix reset!"
   _cmd_doc_ch_skyline_bot: "<username> - Change your Skyline inline bot username"
   _cls_doc: "Provides support for inline stuff"
-
 test:
   name: "Tester"
   set_loglevel: "<emoji document_id=5355133243773435190>🚫</emoji> <b>Please specify verbosity as an integer or string</b>"
@@ -404,7 +395,6 @@ test:
   _cmd_doc_ping: "Test your userbot ping"
   _cmd_doc_suspend: "<time> - Suspends the bot for N seconds"
   _cls_doc: "Perform operations based on userbot self-testing"
-
 updater:
   name: "Updater"
   source: "<emoji document_id=5208634061085492935>📖</emoji> <b>Read the source code from</b> <a href='{}'>here</a>"
@@ -445,8 +435,6 @@ updater:
   update: "🔄 Update"
   ignore: "🚫 Ignore"
   changelog: '<emoji document_id=5434144690511290129>📰</emoji> <b>Changelog of the last major update:</b><pre><code class="language-skyline">{}</code></pre>'
-
-
 api_protection:
   name: "APILimiter"
   warning: "⚠️ <b>WARNING!</b>\n\nYour account exceeded the limit of requests, specified in config. In order to prevent Telegram API Flood, userbot has been <b>fully frozen</b> for {} seconds. Further info is provided in attached file. \n\nIt is recommended to get help in <code>{prefix}support</code> group!\n\nIf you think, that it is an intended behavior, then wait until userbot gets unlocked and next time, when you will be going to perform such an operation, use <code>{prefix}suspend_api_protect</code> &lt;time in seconds&gt;"
@@ -470,7 +458,6 @@ api_protection:
   _cmd_doc_debugger: "Show the Werkzeug PIN"
   _cmd_doc_suspend_api_protect: "<time in seconds> - Suspend API Ratelimiter for n seconds"
   _cls_doc: "Helps userbot avoid spamming Telegram API"
-
 help:
   name: "Help"
   undoc: "🦥 No docs"
@@ -483,7 +470,6 @@ help:
   not_exact: "<emoji document_id=5355133243773435190>☝️</emoji> <b>No exact match occured, so the closest result is shown instead</b>"
   request_join: "You requested link for Skyline support chat"
   core_notice: "<emoji document_id=5355133243773435190>☝️</emoji> <b>This is a core module. You can't unload it nor replace</b>"
-
 skyline_info:
   name: "SkylineInfo"
   owner: "Owner"
@@ -517,7 +503,6 @@ skyline_info:
   _cmd_doc_setinfo: "<text> - Change text in .info"
   _ihandle_doc_info: "Send userbot info"
   _cls_doc: "Show userbot info"
-
 loader:
   name: "Loader"
   loadmod_pm_timeout: "Please, wait for 10 seconds before confirming this action"
@@ -598,7 +583,6 @@ loader:
   _cmd_doc_unloadmod: "Unload module by class name"
   _cls_doc: "Loads modules"
   basic_auth_doc: "Basic auth for module repo"
-
 translations:
   name: "Translations"
   lang_saved: "{} <b>Language saved!</b>"
@@ -616,7 +600,6 @@ translations:
   _cmd_doc_dllangpack: "[link to a langpack | empty to remove] - Change Skyline translate pack (external)"
   _cmd_doc_setlang: "[languages in the order of priority] - Change default language"
   _cls_doc: "Processes internal translations"
-
 eval:
   name: "Evaluator"
   eval: "<emoji document_id={}>💻</emoji><b> Code:</b>\n<pre><code class=\"language-{}\">{}</code></pre>\n\n<emoji document_id=5197688912457245639>✅</emoji><b> Result:</b>\n<pre><code class=\"language-{}\">{}</code></pre>"
@@ -634,7 +617,6 @@ eval:
   _cmd_doc_ephp: "Evaluates PHP code"
   _cmd_doc_eruby: "Evaluates Ruby code"
   _cls_doc: "Evaluates code in various languages"
-
 translate:
   name: "Translator"
   no_args: "<emoji document_id=5210952531676504517>❌</emoji> <b>No arguments provided</b>"
@@ -642,7 +624,6 @@ translate:
   language: "en"
   _cmd_doc_tr: "[language] [text] - Translate text"
   _cls_doc: "Translates text (obviously)"
-
 quickstart:
   name: "Quickstart"
   base: "🪐 <b>Hello.</b> Your <b>Skyline</b> userbot is now installed.\n\n❓ <b>Need help?</b> Join <a href=\"https://t.me/skyline_talks\">our support chat</a>. We help <b>everyone</b>.\n\n💁‍♀️ <b>Quick Guide:</b>\n\n1️⃣ <b>Write</b> <code>.help</code> <b>to see the list of modules</b>\n2️⃣ <b>Write</b> <code>.help &lt;Module name/command&gt;</code> <b>to see the description of the module</b>\n3️⃣ <b>Write</b> <code>.dlmod &lt;link&gt;</code> <b>to load a module from a link</b>\n4️⃣ <b>Write</b> <code>.loadmod</code> <b>in response to a file to load a module from it</b>\n5️⃣ <b>Write</b> <code>.unloadmod &lt;Module name&gt;</code> <b>to unload a module</b>\n\n💡 <b>Skyline supports modules from Hikka, Friendly-Telegram, and GeekTG, as well as its own.</b>\n"
@@ -651,7 +632,6 @@ quickstart:
   language: "🇬🇧 English"
   btn_support: "🥷 Support chat"
   _cls_doc: "Notifies user about userbot installation"
-
 $validators:
   boolean: "boolean"
   positive: "positive "
@@ -687,7 +667,6 @@ $validators:
   emoji_max_len: "no more than {max_len} emojis"
   emoji: "emoji"
   entity_like: "link to entity, username or Telegram ID"
-
 $inline:
   opening_form: " <b>Opening form...</b>"
   opening_gallery: " <b>Opening gallery...</b>"

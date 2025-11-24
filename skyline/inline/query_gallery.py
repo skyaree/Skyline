@@ -1,18 +1,11 @@
-
-
 import asyncio
 import logging
 import time
 import typing
-
 from aiogram.types import InlineQuery, InlineQueryResultArticle, InputTextMessageContent
-
 from .. import utils
 from .types import InlineUnit
-
 logger = logging.getLogger(__name__)
-
-
 class QueryGallery(InlineUnit):
     async def query_gallery(
         self,
@@ -47,24 +40,20 @@ class QueryGallery(InlineUnit):
                 type(force_me),
             )
             return False
-
         if not isinstance(disable_security, bool):
             logger.error(
                 "Invalid type for `disable_security`. Expected `bool`, got %s",
                 type(disable_security),
             )
             return False
-
         if always_allow and not isinstance(always_allow, list):
             logger.error(
                 "Invalid type for `always_allow`. Expected `list`, got %s",
                 type(always_allow),
             )
             return False
-
         if not always_allow:
             always_allow = []
-
         if (
             not isinstance(items, list)
             or not all(isinstance(i, dict) for i in items)
@@ -84,17 +73,14 @@ class QueryGallery(InlineUnit):
         ):
             logger.error("Invalid `items` specified in query gallery")
             return False
-
         result = []
         for i in items:
             if "thumb_handler" not in i:
                 photo_url = await self._call_photo(i["next_handler"])
                 if not photo_url:
                     return False
-
                 if isinstance(photo_url, list):
                     photo_url = photo_url[0]
-
                 if not isinstance(photo_url, str):
                     logger.error(
                         "Invalid result from `next_handler`. Expected `str`, got %s",
@@ -105,19 +91,15 @@ class QueryGallery(InlineUnit):
                 photo_url = await self._call_photo(i["thumb_handler"])
                 if not photo_url:
                     return False
-
                 if isinstance(photo_url, list):
                     photo_url = photo_url[0]
-
                 if not isinstance(photo_url, str):
                     logger.error(
                         "Invalid result from `thumb_handler`. Expected `str`, got %s",
                         type(photo_url),
                     )
                     continue
-
             id_ = utils.rand(16)
-
             self._custom_map[id_] = {
                 "handler": i["next_handler"],
                 "ttl": round(time.time()) + 120,
@@ -126,7 +108,6 @@ class QueryGallery(InlineUnit):
                 **({"disable_security": disable_security} if disable_security else {}),
                 **({"caption": i["caption"]} if "caption" in i else {}),
             }
-
             result += [
                 InlineQueryResultArticle(
                     id=utils.rand(20),
@@ -142,6 +123,5 @@ class QueryGallery(InlineUnit):
                     thumb_height=128,
                 )
             ]
-
         await query.answer(result, cache_time=0)
         return True

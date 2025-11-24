@@ -1,11 +1,4 @@
 """Main script, where all the fun starts"""
-
-
-
-
-
-
-
 import argparse
 import asyncio
 import collections
@@ -22,7 +15,6 @@ import sys
 import typing
 from getpass import getpass
 from pathlib import Path
-
 import aiohttp
 import skylinetl
 from skylinetl import events
@@ -44,7 +36,6 @@ from skylinetl.sessions import MemorySession, SQLiteSession
 from skylinetl.tl.functions.account import GetPasswordRequest
 from skylinetl.tl.functions.auth import CheckPasswordRequest
 from skylinetl.tl.functions.contacts import UnblockRequest
-
 from . import database, loader, utils, version
 from ._internal import print_banner, restart
 from .dispatcher import CommandDispatcher
@@ -53,7 +44,6 @@ from .secure import patcher
 from .tl_cache import CustomTelegramClient
 from .translations import Translator
 from .version import __version__
-
 try:
     from .web import core
 except ImportError:
@@ -61,16 +51,13 @@ except ImportError:
     logging.exception("Unable to import web")
 else:
     web_available = True
-
 BASE_DIR = (
     "/data"
     if "DOCKER" in os.environ
     else os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 )
-
 BASE_PATH = Path(BASE_DIR)
 CONFIG_PATH = BASE_PATH / "config.json"
-
 LATIN_MOCK = [
     "Amor", "Arbor", "Astra", "Aurum", "Bellum", "Caelum",
     "Calor", "Candor", "Carpe", "Celer", "Certo", "Cibus",
@@ -100,8 +87,6 @@ LATIN_MOCK = [
     "Veritas", "Verus", "Vester", "Via", "Victoria",
     "Vita", "Vox", "Vultus", "Zephyrus"
 ]
-
-
 def generate_app_name() -> str:
     """
     Generate random app name
@@ -109,8 +94,6 @@ def generate_app_name() -> str:
     :example: "Cresco Cibus Consilium"
     """
     return " ".join(random.choices(LATIN_MOCK, k=3))
-
-
 def get_app_name() -> str:
     """
     Generates random app name or gets the saved one of present
@@ -120,19 +103,14 @@ def get_app_name() -> str:
     if not (app_name := get_config_key("app_name")):
         app_name = generate_app_name()
         save_config_key("app_name", app_name)
-
     return app_name
-
-
 def generate_random_system_version():
     """
     Generates a random system version string similar to those used by Windows or Linux.
-
     This function generates a random version string that follows the format used by operating systems
     like Windows or Linux. The version string includes the major version, minor version, patch number,
     and build number, each of which is randomly generated within specified ranges. Additionally, it
     includes a random operating system name and version.
-
     :return: A randomly generated system version string.
     :example: "Windows 10.0.19042.1234" or "Ubuntu 20.04.19042.1234"
     """
@@ -159,18 +137,12 @@ def generate_random_system_version():
         ("IOS", "18.0.1"),
     ]
     os_name, os_version = random.choice(os_choices)
-
     version = f"{os_name} {os_version}"
     return version
-
-
 def run_config():
     """Load configurator.py"""
     from . import configurator
-
     return configurator.api_config(None)
-
-
 def get_config_key(key: str) -> typing.Union[str, bool]:
     """
     Parse and return key from config
@@ -181,8 +153,6 @@ def get_config_key(key: str) -> typing.Union[str, bool]:
         return json.loads(CONFIG_PATH.read_text()).get(key, False)
     except FileNotFoundError:
         return False
-
-
 def save_config_key(key: str, value: str) -> bool:
     """
     Save `key` with `value` to config
@@ -194,12 +164,9 @@ def save_config_key(key: str, value: str) -> bool:
         config = json.loads(CONFIG_PATH.read_text())
     except FileNotFoundError:
         config = {}
-
     config[key] = value
     CONFIG_PATH.write_text(json.dumps(config, indent=4))
     return True
-
-
 def gen_port(cfg: str = "port", no8080: bool = False) -> int:
     """
     Generates random free port in case of VDS.
@@ -208,19 +175,14 @@ def gen_port(cfg: str = "port", no8080: bool = False) -> int:
     """
     if "DOCKER" in os.environ and not no8080:
         return 8080
-
     if port := get_config_key(cfg):
         return port
-
     while port := random.randint(1024, 65536):
         if socket.socket(socket.AF_INET, socket.SOCK_STREAM).connect_ex(
             ("localhost", port)
         ):
             break
-
     return port
-
-
 def parse_arguments() -> dict:
     """
     Parses the arguments
@@ -304,45 +266,31 @@ def parse_arguments() -> dict:
     arguments = parser.parse_args()
     logging.debug(arguments)
     return arguments
-
-
 class SuperList(list):
     """
     Makes able: await self.allclients.send_message("foo", "bar")
     """
-
     def __getattribute__(self, attr: str) -> typing.Any:
         if hasattr(list, attr):
             return list.__getattribute__(self, attr)
-
         for obj in self:
             attribute = getattr(obj, attr)
             if callable(attribute):
                 if asyncio.iscoroutinefunction(attribute):
-
                     async def foobar(*args, **kwargs):
                         return [await getattr(_, attr)(*args, **kwargs) for _ in self]
-
                     return foobar
                 return lambda *args, **kwargs: [
                     getattr(_, attr)(*args, **kwargs) for _ in self
                 ]
-
             return [getattr(x, attr) for x in self]
-
-
 class InteractiveAuthRequired(Exception):
     """Is being rased by Telethon, if phone is required"""
-
-
 def raise_auth():
     """Raises `InteractiveAuthRequired`"""
     raise InteractiveAuthRequired()
-
-
 class Skyline:
     """Main userbot instance, which can handle multiple clients"""
-
     def __init__(self):
         global BASE_DIR, BASE_PATH, CONFIG_PATH
         self.omit_log = False
@@ -352,13 +300,11 @@ class Skyline:
             BASE_PATH = Path(BASE_DIR)
             CONFIG_PATH = BASE_PATH / "config.json"
         self.loop = asyncio.get_event_loop()
-
         self.clients = SuperList()
         self.ready = asyncio.Event()
         self._read_sessions()
         self._get_api_token()
         self._get_proxy()
-
     def _get_proxy(self):
         """
         Get proxy tuple from --proxy-host, --proxy-port and --proxy-secret
@@ -383,9 +329,7 @@ class Skyline:
                 ConnectionTcpMTProxyRandomizedIntermediate,
             )
             return
-
         self.proxy, self.conn = None, ConnectionTcpFull
-
     def _read_sessions(self):
         """Gets sessions from environment and data directory"""
         self.sessions = []
@@ -401,11 +345,9 @@ class Skyline:
                 os.listdir(BASE_DIR),
             )
         ]
-
     def _get_api_token(self):
         """Get API Token from disk or environment"""
         api_token_type = collections.namedtuple("api_token", ("ID", "HASH"))
-
         try:
             if not get_config_key("api_id"):
                 api_id, api_hash = (
@@ -418,7 +360,6 @@ class Skyline:
                 save_config_key("api_hash", api_hash)
                 (Path(BASE_DIR) / "api_token.txt").unlink()
                 logging.debug("Migrated api_token.txt to config.json")
-
             api_token = api_token_type(
                 get_config_key("api_id"),
                 get_config_key("api_hash"),
@@ -434,9 +375,7 @@ class Skyline:
                     )
                 except KeyError:
                     api_token = None
-
         self.api_token = api_token
-
     def _init_web(self):
         """Initialize web"""
         if (
@@ -445,14 +384,12 @@ class Skyline:
         ):
             self.web = None
             return
-
         self.web = core.Web(
             data_root=BASE_DIR,
             api_token=self.api_token,
             proxy=self.proxy,
             connection=self.conn,
         )
-
     async def _get_token(self):
         """Reads or waits for user to enter API credentials"""
         while self.api_token is None:
@@ -467,7 +404,6 @@ class Skyline:
                 run_config()
                 importlib.invalidate_caches()
                 self._get_api_token()
-
     async def save_client_session(
         self,
         client: CustomTelegramClient,
@@ -479,47 +415,37 @@ class Skyline:
         else:
             if not (me := await client.get_me()):
                 raise RuntimeError("Attempted to save non-inited session")
-
             telegram_id = me.id
             client._tg_id = telegram_id
             client.tg_id = telegram_id
             client.hikka_me = me
             client.skyline_me = me
-
         session = SQLiteSession(
             os.path.join(
                 BASE_DIR,
                 f"skyline-{telegram_id}",
             )
         )
-
         session.set_dc(
             client.session.dc_id,
             client.session.server_address,
             client.session.port,
         )
-
         session.auth_key = client.session.auth_key
-
         session.save()
-
         if not delay_restart:
             client.disconnect()
             restart()
-
         client.session = session
         client.skyline_db = database.Database(client)
         await client.skyline_db.init()
-
         if delay_restart:
             client.disconnect()
             await asyncio.sleep(3600)  # Will be restarted from web anyway
-
     async def _web_banner(self):
         """Shows web banner"""
         logging.info("🔎 Web mode ready for configuration")
         logging.info("🔗 Please visit %s", self.web.url)
-
     async def wait_for_web_auth(self, token: str) -> bool:
         """
         Waits for web auth confirmation in Telegram
@@ -530,32 +456,25 @@ class Skyline:
         polling_interval = 1
         for _ in range(timeout * polling_interval):
             await asyncio.sleep(polling_interval)
-
             for client in self.clients:
                 if client.loader.inline.pop_web_auth_token(token):
                     return True
-
         return False
-
     async def _phone_login(self, client: CustomTelegramClient) -> bool:
         phone = input(
             "\033[0;96mEnter phone: \033[0m"
             if self.arguments.tty
             else "Enter phone: "
         )
-
         await client.start(phone)
-
         me = await client.get_me()
         telegram_id = me.id
         client._tg_id = telegram_id
         client.tg_id = telegram_id
         client.hikka_me = me
         client.skyline_me = me
-
         db = database.Database(client)
         await db.init()
-
         while (bot := input("You can enter a custom bot username or leave it empty and Skyline will generate a random one: ")):
             try:
                 if await self._check_bot(client, bot):
@@ -567,11 +486,9 @@ class Skyline:
                     continue
             except Exception:
                 print("Something went wrong")
-
         await self.save_client_session(client)
         self.clients += [client]
         return True
-
     async def _check_bot(
         self,
         client: CustomTelegramClient,
@@ -583,37 +500,28 @@ class Skyline:
             except YouBlockedUserError:
                 await client(UnblockRequest(id="@BotFather"))
                 m = await conv.send_message("/token")
-
             r = await conv.get_response()
-
             await m.delete()
             await r.delete()
-
             if not hasattr(r, "reply_markup") or not hasattr(r.reply_markup, "rows"):
                 return False
-
             for row in r.reply_markup.rows:
                 for button in row.buttons:
                     if username != button.text.strip("@"):
                         continue
-
                     m = await conv.send_message("/cancel")
                     r = await conv.get_response()
-
                     await m.delete()
                     await r.delete()
-
                     return True
         try:
             await client.get_entity(f"{username}")
         except:
             return True
-
     async def _initial_setup(self) -> bool:
         """Responsible for first start"""
         if self.arguments.no_auth:
             return False
-
         if not self.web:
             client = CustomTelegramClient(
                 MemorySession(),
@@ -629,7 +537,6 @@ class Skyline:
                 system_lang_code="en-US",
             )
             await client.connect()
-
             print(
                 (
                     "\033[0;96m{}\033[0m" if self.arguments.tty else "{}"
@@ -638,7 +545,6 @@ class Skyline:
                     " phone, for example)."
                 )
             )
-
             if (
                 input(
                     "\033[0;96mUse QR code? [y/N]: \033[0m"
@@ -648,10 +554,8 @@ class Skyline:
                 != "y"
             ):
                 return await self._phone_login(client)
-
             print("\033[0;96mLoading QR code...\033[0m")
             qr_login = await client.qr_login()
-
             def print_qr():
                 qr = QRCode()
                 qr.add_data(qr_login.url)
@@ -659,7 +563,6 @@ class Skyline:
                 qr.print_ascii(invert=True)
                 print("\033[0;96mScan the QR code above to log in.\033[0m")
                 print("\033[0;96mPress Ctrl+C to cancel.\033[0m")
-
             async def qr_login_poll() -> bool:
                 logged_in = False
                 while not logged_in:
@@ -676,12 +579,9 @@ class Skyline:
                     except KeyboardInterrupt:
                         print("\033[2J\033[3;1f")
                         return None
-
                 return False
-
             if (qr_logined := await qr_login_poll()) is None:
                 return await self._phone_login(client)
-
             if qr_logined:
                 print_banner("2fa.txt")
                 password = await client(GetPasswordRequest())
@@ -721,24 +621,19 @@ class Skyline:
                         return False
                     else:
                         break
-
             print_banner("success.txt")
             print("\033[0;92mLogged in successfully!\033[0m")
             await self.save_client_session(client)
             self.clients += [client]
             return True
-
         if not self.web.running.is_set():
             await self.web.start(
                 self.arguments.port,
                 proxy_pass=True,
             )
             await self._web_banner()
-
         await self.web.wait_for_clients_setup()
-
         return True
-
     async def _init_clients(self) -> bool:
         """
         Reads session from disk and inits them
@@ -761,10 +656,8 @@ class Skyline:
                 )
                 if session.server_address == "0.0.0.0":
                     patcher.patch(client, session)
-
                 await client.connect()
                 client.phone = "None"
-
                 self.clients += [client]
             except sqlite3.OperationalError:
                 logging.error(
@@ -791,9 +684,7 @@ class Skyline:
                     session.filename,
                 )
                 self.sessions.remove(session)
-
         return bool(self.sessions)
-
     async def amain_wrapper(self, client: CustomTelegramClient):
         """Wrapper around amain"""
         async with client:
@@ -803,7 +694,6 @@ class Skyline:
             client.tg_id = me.id
             client.hikka_me = me
             client.skyline_me = me
-
             async with aiohttp.ClientSession() as session:
                 async with session.get("https://raw.githubusercontent.com/coddrago/modules-web/main/mods/ids/allowed_ids.txt") as response:
                     if response.status == 200:
@@ -812,23 +702,17 @@ class Skyline:
                     else:
                         logging.error(f"Exception on loading allowed beta testers ids: {response.status}")
                         return []
-
             await asyncio.gather(*[version.check_branch((await client.get_me()).id, allowed_ids) for client in self.clients])
-
             while await self.amain(first, client):
                 first = False
-
     async def _badge(self, client: CustomTelegramClient):
         """Call the badge in shell"""
         try:
             import git
-
             repo = git.Repo()
-
             build = utils.get_git_hash()
             diff = repo.git.log([f"HEAD..origin/{version.branch}", "--oneline"])
             upd = "Update required" if diff else "Up-to-date"
-
             logo = (
                 "                          _           \n"
                r"  /\  /\ ___  _ __  ___  | | __ _   _ ""\n"
@@ -854,7 +738,6 @@ class Skyline:
                         web_url,
                     )
                     self.omit_log = True
-
             await client.skyline_inline.bot.send_photo(
                 logging.getLogger().handlers[0].get_logid_by_client(client.tg_id),
                 "https://raw.githubusercontent.com/coddrago/assets/refs/heads/main/skyline/skyline_started.png",
@@ -870,7 +753,6 @@ class Skyline:
                     )
                 ),
             )
-
             logging.debug(
                 "· Started for %s · Prefix: «%s» ·",
                 client.tg_id,
@@ -878,7 +760,6 @@ class Skyline:
             )
         except Exception:
             logging.exception("Badge error")
-
     async def _add_dispatcher(
         self,
         client: CustomTelegramClient,
@@ -889,50 +770,39 @@ class Skyline:
         dispatcher = CommandDispatcher(modules, client, db)
         client.dispatcher = dispatcher
         modules.check_security = dispatcher.check_security
-
         client.add_event_handler(
             dispatcher.handle_incoming,
             events.NewMessage,
         )
-
         client.add_event_handler(
             dispatcher.handle_incoming,
             events.ChatAction,
         )
-
         client.add_event_handler(
             dispatcher.handle_command,
             events.NewMessage(forwards=False),
         )
-
         client.add_event_handler(
             dispatcher.handle_command,
             events.MessageEdited(),
         )
-
         client.add_event_handler(
             dispatcher.handle_raw,
             events.Raw(),
         )
-
     async def amain(self, first: bool, client: CustomTelegramClient):
         """Entrypoint for async init, run once for each user"""
         client.parse_mode = "HTML"
         await client.start()
-
         db = database.Database(client)
         client.skyline_db = db
         await db.init()
-
         logging.debug("Got DB")
         logging.debug("Loading logging config...")
-
         translator = Translator(client, db)
-
         await translator.init()
         modules = loader.Modules(client, db, self.clients, translator)
         client.loader = modules
-
         if self.web:
             await self.web.add_loader(client, modules, db)
             await self.web.start_if_ready(
@@ -940,25 +810,19 @@ class Skyline:
                 self.arguments.port,
                 proxy_pass=self.arguments.proxy_pass,
             )
-
         await self._add_dispatcher(client, modules, db)
-
         await modules.register_all(None)
         modules.send_config()
         await modules.send_ready()
-
         if first:
             await self._badge(client)
-
         await client.run_until_disconnected()
-
     async def _main(self):
         """Main entrypoint"""
         self._init_web()
         inital_web = False
         save_config_key("port", self.arguments.port)
         await self._get_token()
-
         if (
             not self.clients and not self.sessions or not await self._init_clients()
         ) and not (inital_web := await self._initial_setup()):
@@ -969,7 +833,6 @@ class Skyline:
                 await self.web.stop()
                 logging.debug("inital web was stopped for security reasons")
             asyncio.create_task(scheduled_web_stop())
-
         self.loop.set_exception_handler(
             lambda _, x: logging.error(
                 "Exception on event loop! %s",
@@ -977,9 +840,7 @@ class Skyline:
                 exc_info=x.get("exception", None),
             )
         )
-
         await asyncio.gather(*[self.amain_wrapper(client) for client in self.clients])
-
     async def _shutdown_handler(self):
         for client in self.clients:
             inline = getattr(client.loader, "inline", None)
@@ -997,7 +858,6 @@ class Skyline:
             if task is not asyncio.current_task():
                 task.cancel()
         self.loop.stop()
-
     def main(self):
         """Main entrypoint"""
         if sys.platform != "win32":
@@ -1010,7 +870,6 @@ class Skyline:
                 logging.warning("Signal handlers not supported on this platform.")
         else:
             logging.info("Running on Windows — skipping signal handler.")
-
         try:
             self.loop.run_until_complete(self._main())
         except KeyboardInterrupt:
@@ -1024,7 +883,5 @@ class Skyline:
                 self.loop.run_until_complete(self._shutdown_handler())
             except:
                 pass
-
 skylinetl.extensions.html.CUSTOM_EMOJIS = not get_config_key("disable_custom_emojis")
-
 skyline = Skyline()

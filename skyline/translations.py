@@ -1,21 +1,15 @@
-
-
 import json
 import logging
 import typing
 from pathlib import Path
-
 import requests
 from ruamel.yaml import YAML
-
 from . import utils
 from .database import Database
 from .tl_cache import CustomTelegramClient
 from .types import Module
-
 logger = logging.getLogger(__name__)
 yaml = YAML(typ="safe")
-
 PACKS = Path(__file__).parent / "langpacks"
 SUPPORTED_LANGUAGES = {
     "en": "🇬🇧 English",
@@ -23,16 +17,11 @@ SUPPORTED_LANGUAGES = {
     "ua": "🇺🇦 Український",
     "de": "🇩🇪 Deutsch",
 }
-
-
 def fmt(text: str, kwargs: dict) -> str:
     for key, value in kwargs.items():
         if f"{{{key}}}" in text:
             text = text.replace(f"{{{key}}}", str(value))
-
     return text
-
-
 class BaseTranslator:
     def _get_pack_content(
         self,
@@ -40,7 +29,6 @@ class BaseTranslator:
         prefix: str = "skyline.modules.",
     ) -> typing.Optional[dict]:
         return self._get_pack_raw(pack.read_text(encoding="utf-8"), pack.suffix, prefix)
-
     def _get_pack_raw(
         self,
         content: str,
@@ -49,7 +37,6 @@ class BaseTranslator:
     ) -> typing.Optional[dict]:
         if suffix == ".json":
             return json.loads(content)
-
         content = yaml.load(content)
         if all(len(key) == 2 for key in content):
             return {
@@ -67,7 +54,6 @@ class BaseTranslator:
                 }
                 for language, pack in content.items()
             }
-
         return {
             (
                 f"{module.strip('$')}.{key}"
@@ -78,39 +64,30 @@ class BaseTranslator:
             for key, value in strings.items()
             if key != "name"
         }
-
     def getkey(self, key: str) -> typing.Any:
         return self._data.get(key, False)
-
     def gettext(self, text: str) -> typing.Any:
         return self.getkey(text) or text
-
     async def load_module_translations(self, pack_url: str) -> typing.Union[bool, dict]:
         try:
             data = yaml.load((await utils.run_sync(requests.get, pack_url)).text)
         except Exception:
             logger.exception("Unable to decode %s", pack_url)
             return False
-
         if any(len(key) != 2 for key in data):
             return data
-
         if lang := self.db.get(__name__, "lang", False):
             return next(
                 (data[language] for language in lang.split() if language in data),
                 data.get("en", {}),
             )
-
         return data.get("en", {})
-
-
 class Translator(BaseTranslator):
     def __init__(self, client: CustomTelegramClient, db: Database):
         self._client = client
         self.db = db
         self._data = {}
         self.raw_data = {}
-
     async def init(self) -> bool:
         self._data = self._get_pack_content(PACKS / "en.yml")
         self.raw_data["en"] = self._data.copy()
@@ -126,12 +103,10 @@ class Translator(BaseTranslator):
                     except Exception:
                         logger.exception("Unable to decode %s", language)
                         continue
-
                     self._data.update(data)
                     self.raw_data[language] = data
                     any_ = True
                     continue
-
                 for possible_path in [
                     PACKS / f"{language}.json",
                     PACKS / f"{language}.yml",
@@ -141,49 +116,37 @@ class Translator(BaseTranslator):
                         self._data.update(data)
                         self.raw_data[language] = data
                         any_ = True
-
         for language in SUPPORTED_LANGUAGES:
             if language not in self.raw_data and (PACKS / f"{language}.yml").exists():
                 self.raw_data[language] = self._get_pack_content(
                     PACKS / f"{language}.yml"
                 )
-
         return any_
-
-
 class ExternalTranslator(BaseTranslator):
     def __init__(self):
         self.data = {}
         for lang in SUPPORTED_LANGUAGES:
             self.data[lang] = self._get_pack_content(PACKS / f"{lang}.yml", prefix="")
-
     def get(self, key: str, lang: str) -> str:
         return self.data[lang].get(key, False) or key
-
     def getdict(self, key: str, **kwargs) -> dict:
         return {
             lang: fmt(self.data[lang].get(key, False) or key, kwargs)
             for lang in self.data
         }
-
-
 class Strings:
     def __init__(self, mod: Module, translator: Translator):  # skipcq: PYL-W0621
         self._mod = mod
         self._translator = translator
-
         if not translator:
             logger.debug("Module %s got empty translator %s", mod, translator)
-
         self._base_strings = mod.strings  # Back 'em up, bc they will get replaced
         self.external_strings = {}
-
     def get(self, key: str, lang: typing.Optional[str] = None) -> str:
         try:
             return self._translator.raw_data[lang][f"{self._mod.__module__}.{key}"]
         except KeyError:
             return self[key]
-
     def __getitem__(self, key: str) -> str:
         return (
             self.external_strings.get(key, None)
@@ -218,16 +181,12 @@ class Strings:
                 self._base_strings.get(key, "Unknown strings"),
             )
         )
-
     def __call__(
         self,
         key: str,
         _: typing.Optional[typing.Any] = None,  # Compatibility tweak for FTG\GeekTG
     ) -> str:
         return self.__getitem__(key)
-
     def __iter__(self):
         return self._base_strings.__iter__()
-
-
 translator = ExternalTranslator()

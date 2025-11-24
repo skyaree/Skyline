@@ -1,11 +1,8 @@
-
-
 import asyncio
 import logging
 import os
 import string
 import typing
-
 from skylinetl.errors import (
     FloodWaitError,
     PasswordHashInvalidError,
@@ -17,31 +14,22 @@ from skylinetl.errors import (
 from skylinetl.sessions import MemorySession
 from skylinetl.utils import parse_phone
 from skylinetl.tl.types import Message, User
-
 from .. import loader, main, utils
 from .._internal import restart
 from ..inline.types import InlineCall
 from ..tl_cache import CustomTelegramClient
 from ..version import __version__
 from ..web import core
-
 logger = logging.getLogger(__name__)
-
-
 @loader.tds
 class SkylineWebMod(loader.Module):
     """Web/Inline mode add account"""
-
     strings = {"name": "SkylineWeb"}
-
-
     @loader.command()
     async def weburl(self, message: Message, force: bool = False):
-
         if "OTHERHOST" in os.environ or "JAMHOST" in os.environ:
             await utils.answer(message, self.strings["host_denied"])
         else:
-        
             if "LAVHOST" in os.environ:
                 form = await self.inline.form(
                     self.strings("lavhost_web"),
@@ -53,7 +41,6 @@ class SkylineWebMod(loader.Module):
                     photo="https://imgur.com/a/yOoHsa2.png",
                 )
                 return
-
             if (
                 not force
                 and not message.is_private
@@ -82,9 +69,7 @@ class SkylineWebMod(loader.Module):
                             utils.escape_html(self.get_prefix()),
                         ),
                     )
-
                 return
-
             if not main.skyline.web:
                 main.skyline.web = core.Web(
                     data_root=main.BASE_DIR,
@@ -98,7 +83,6 @@ class SkylineWebMod(loader.Module):
                     main.skyline.arguments.port,
                     proxy_pass=main.skyline.arguments.proxy_pass,
                 )
-
             if force:
                 form = message
                 await form.edit(
@@ -117,58 +101,47 @@ class SkylineWebMod(loader.Module):
                         "https://raw.githubusercontent.com/coddrago/assets/refs/heads/main/skyline/opening_tunnel.png"
                     ),
                 )
-
             url = await main.skyline.web.get_url(proxy_pass=True)
-
             await form.edit(
                 self.strings("tunnel_opened"),
                 reply_markup={"text": self.strings("web_btn"), "url": url},
                 photo="https://raw.githubusercontent.com/coddrago/assets/refs/heads/main/skyline/tunnel_opened.png",
             )
-
     @loader.command()
     async def addacc(self, message: Message):
-
         if "JAMHOST" in os.environ or "LAVHOST" in os.environ or "OTHERHOST" in os.environ:
             await utils.answer(message, self.strings["host_denied"])
         else:
-
             id = utils.get_args(message)
             if not id:
                 reply = await message.get_reply_message()
                 id = reply.sender_id if reply else None
             else:
                 id = id[0]
-        
             user = None
             if id:
                 try:
                     id = int(id)
                 except ValueError:
                     pass
-
                 try:
                     user = await self._client.get_entity(id)
                 except Exception as e:
                     logger.error(f"Error while fetching user: {e}")
-
             if not user or not isinstance(user, User) or user.bot:
                 await utils.answer(
                     message,
                     self.strings("invalid_target")
                 )
                 return
-        
             if user.id == self._client.tg_id:
                 await utils.answer(
                     message,
                     self.strings("cant_add_self")
                 )
                 return
-        
             if "force_insecure" in message.text.lower():
                 await self._inline_login(message, user)
-        
             try:
                 if not await self.inline.form(
                         self.strings("add_user_confirm").format(
@@ -198,22 +171,17 @@ class SkylineWebMod(loader.Module):
                     )
                 )
             return
-        
     async def _inline_login(self, call: typing.Union[Message, InlineCall], user: User, after_fail: bool = False):
         reply_markup = [
             {"text": self.strings("enter_number"), "input": self.strings("your_phone_number"), "handler": self.inline_phone_handler, "args": (user,)}
         ]
-
         fail = self.strings("incorrect_number") if after_fail else ""
-
         await utils.answer(
             call,
             fail + self.strings("enter_number_format"),
             reply_markup=reply_markup,
             always_allow=[user.id]
         )
-
-
     def _get_client(self) -> CustomTelegramClient:
         return CustomTelegramClient(
             MemorySession(),
@@ -228,7 +196,6 @@ class SkylineWebMod(loader.Module):
             lang_code="en",
             system_lang_code="en-US",
         )
-    
     async def schedule_restart(self, call, client):
         await utils.answer(
             call,
@@ -237,14 +204,11 @@ class SkylineWebMod(loader.Module):
         await asyncio.sleep(1)
         await main.skyline.save_client_session(client, delay_restart=False)
         restart()
-
     async def inline_phone_handler(self, call, data, user):
         if not (phone := parse_phone(data)):
             await self._inline_login(call, user, after_fail=True)
             return
-        
         client = self._get_client()
-
         await client.connect()
         try:
             await client.send_code_request(phone)
@@ -258,16 +222,13 @@ class SkylineWebMod(loader.Module):
         except PhoneNumberInvalidError:
             await self._inline_login(call, user, after_fail=True)
             return
-        
         reply_markup = {"text": self.strings("enter_code"), "input": self.strings("login_code"), "handler": self.inline_code_handler, "args": (client, phone, user,)}
-        
         await utils.answer(
             call,
             self.strings("code_sent"),
             reply_markup=reply_markup,
             always_allow=[user.id]
         )
-        
     async def inline_code_handler(self, call, data, client, phone, user):
         _code_markup = {"text": self.strings("enter_code"), "input": self.strings("login_code"), "handler": self.inline_code_handler, "args": (client, phone, user,)}
         if not data or len(data) != 5:
@@ -278,7 +239,6 @@ class SkylineWebMod(loader.Module):
                 always_allow=[user.id]
             )
             return
-        
         if any(c not in string.digits for c in data):
             await utils.answer(
                 call,
@@ -287,7 +247,6 @@ class SkylineWebMod(loader.Module):
                 always_allow=[user.id]
             )
             return
-        
         try:
             await client.sign_in(phone, code=data)
         except SessionPasswordNeededError:
@@ -327,10 +286,7 @@ class SkylineWebMod(loader.Module):
                 reply_markup={"text": self.strings("btn_no"), "action": "close"},
             )
             return
-        
         asyncio.ensure_future(self.schedule_restart(call, client))
-
-
     async def inline_2fa_handler(self, call, data, client, phone, user):
         _2fa_markup = {"text": self.strings("enter_2fa"), "input": self.strings("your_2fa"), "handler": self.inline_2fa_handler, "args": (client, phone, user,)}
         if not data:
@@ -341,7 +297,6 @@ class SkylineWebMod(loader.Module):
                 always_allow=[user.id]
             )
             return
-        
         try:
             await client.sign_in(phone, password=data)
         except PasswordHashInvalidError:
@@ -359,5 +314,4 @@ class SkylineWebMod(loader.Module):
                 reply_markup={"text": self.strings("btn_no"), "action": "close"},
             )
             return
-        
         asyncio.ensure_future(self.schedule_restart(call, client))

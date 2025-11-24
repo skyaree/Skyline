@@ -1,32 +1,22 @@
-
-
 import math
 import re
 import sys
 from bisect import bisect_left
 from typing import Dict, List, NamedTuple, Optional, cast
-
 ERROR_CORRECT_L = 1
 ERROR_CORRECT_M = 0
 ERROR_CORRECT_Q = 3
 ERROR_CORRECT_H = 2
-
 EXP_TABLE = list(range(256))
-
 LOG_TABLE = list(range(256))
-
 for i in range(8):
     EXP_TABLE[i] = 1 << i
-
 for i in range(8, 256):
     EXP_TABLE[i] = (
         EXP_TABLE[i - 4] ^ EXP_TABLE[i - 5] ^ EXP_TABLE[i - 6] ^ EXP_TABLE[i - 8]
     )
-
 for i in range(255):
     LOG_TABLE[EXP_TABLE[i]] = i
-
-
 def rs_blocks(version, error_correction):
     if error_correction not in RS_BLOCK_OFFSET:  # pragma: no cover
         raise Exception(
@@ -35,24 +25,18 @@ def rs_blocks(version, error_correction):
         )
     offset = RS_BLOCK_OFFSET[error_correction]
     rs_block = RS_BLOCK_TABLE[(version - 1) * 4 + offset]
-
     blocks = []
-
     for i in range(0, len(rs_block), 3):
         count, total_count, data_count = rs_block[i : i + 3]
         for _ in range(count):
             blocks.append(RSBlock(total_count, data_count))
-
     return blocks
-
-
 RS_BLOCK_OFFSET = {
     ERROR_CORRECT_L: 0,
     ERROR_CORRECT_M: 1,
     ERROR_CORRECT_Q: 2,
     ERROR_CORRECT_H: 3,
 }
-
 RS_BLOCK_TABLE = (
     (1, 26, 19),
     (1, 26, 16),
@@ -215,70 +199,48 @@ RS_BLOCK_TABLE = (
     (34, 54, 24, 34, 55, 25),
     (20, 45, 15, 61, 46, 16),
 )
-
-
 def glog(n):
     if n < 1:  # pragma: no cover
         raise ValueError(f"glog({n})")
     return LOG_TABLE[n]
-
-
 def gexp(n):
     return EXP_TABLE[n % 255]
-
-
 class Polynomial:
     def __init__(self, num, shift):
         if not num:  # pragma: no cover
             raise Exception(f"{len(num)}/{shift}")
-
         offset = 0
         for offset in range(len(num)):
             if num[offset] != 0:
                 break
-
         self.num = num[offset:] + [0] * shift
-
     def __getitem__(self, index):
         return self.num[index]
-
     def __iter__(self):
         return iter(self.num)
-
     def __len__(self):
         return len(self.num)
-
     def __mul__(self, other):
         num = [0] * (len(self) + len(other) - 1)
-
         for i, item in enumerate(self):
             for j, other_item in enumerate(other):
                 num[i + j] ^= gexp(glog(item) + glog(other_item))
-
         return Polynomial(num, 0)
-
     def __mod__(self, other):
         difference = len(self) - len(other)
         if difference < 0:
             return self
-
         ratio = glog(self[0]) - glog(other[0])
-
         num = [
             item ^ gexp(glog(other_item) + ratio)
             for item, other_item in zip(self, other)
         ]
         if difference:
             num.extend(self[-difference:])
-
         return Polynomial(num, 0) % other
-
-
 class RSBlock(NamedTuple):
     total_count: int
     data_count: int
-
-
 rsPoly_LUT = {
     7: [1, 127, 122, 154, 164, 11, 68, 117],
     10: [1, 216, 194, 159, 111, 199, 94, 95, 113, 157, 193],
@@ -476,13 +438,10 @@ rsPoly_LUT = {
         150,
     ],
 }
-
-
 MODE_NUMBER = 1 << 0
 MODE_ALPHA_NUM = 1 << 1
 MODE_8BIT_BYTE = 1 << 2
 MODE_KANJI = 1 << 3
-
 MODE_SIZE_SMALL = {
     MODE_NUMBER: 10,
     MODE_ALPHA_NUM: 9,
@@ -501,12 +460,9 @@ MODE_SIZE_LARGE = {
     MODE_8BIT_BYTE: 16,
     MODE_KANJI: 12,
 }
-
 ALPHA_NUM = b"0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ $%*+-./:"
 RE_ALPHA_NUM = re.compile(b"^[" + re.escape(ALPHA_NUM) + rb"]*\Z")
-
 NUMBER_LENGTH = {3: 10, 2: 7, 1: 4}
-
 PATTERN_POSITION_TABLE = [
     [],
     [6, 18],
@@ -549,7 +505,6 @@ PATTERN_POSITION_TABLE = [
     [6, 26, 54, 82, 110, 138, 166],
     [6, 30, 58, 86, 114, 142, 170],
 ]
-
 G15 = (1 << 10) | (1 << 8) | (1 << 5) | (1 << 4) | (1 << 2) | (1 << 1) | (1 << 0)
 G18 = (
     (1 << 12)
@@ -562,15 +517,10 @@ G18 = (
     | (1 << 0)
 )
 G15_MASK = (1 << 14) | (1 << 12) | (1 << 10) | (1 << 4) | (1 << 1)
-
 PAD0 = 0xEC
 PAD1 = 0x11
-
-
 def _data_count(block):
     return block.data_count
-
-
 BIT_LIMIT_TABLE = [
     [0]
     + [
@@ -579,35 +529,24 @@ BIT_LIMIT_TABLE = [
     ]
     for error_correction in range(4)
 ]
-
-
 def BCH_type_info(data):
     d = data << 10
     while BCH_digit(d) - BCH_digit(G15) >= 0:
         d ^= G15 << (BCH_digit(d) - BCH_digit(G15))
-
     return ((data << 10) | d) ^ G15_MASK
-
-
 def BCH_type_number(data):
     d = data << 12
     while BCH_digit(d) - BCH_digit(G18) >= 0:
         d ^= G18 << (BCH_digit(d) - BCH_digit(G18))
     return (data << 12) | d
-
-
 def BCH_digit(data):
     digit = 0
     while data != 0:
         digit += 1
         data >>= 1
     return digit
-
-
 def pattern_position(version):
     return PATTERN_POSITION_TABLE[version - 1]
-
-
 def mask_func(pattern):
     """
     Return the mask function for the given mask pattern.
@@ -629,8 +568,6 @@ def mask_func(pattern):
     if pattern == 7:  # 111
         return lambda i, j: ((i * j) % 3 + (i + j) % 2) % 2 == 0
     raise TypeError("Bad mask pattern: " + pattern)  # pragma: no cover
-
-
 def mode_sizes_for_version(version):
     if version < 10:
         return MODE_SIZE_SMALL
@@ -638,41 +575,26 @@ def mode_sizes_for_version(version):
         return MODE_SIZE_MEDIUM
     else:
         return MODE_SIZE_LARGE
-
-
 def length_in_bits(mode, version):
     if mode not in (MODE_NUMBER, MODE_ALPHA_NUM, MODE_8BIT_BYTE, MODE_KANJI):
         raise TypeError(f"Invalid mode ({mode})")  # pragma: no cover
-
     check_version(version)
-
     return mode_sizes_for_version(version)[mode]
-
-
 def check_version(version):
     if version < 1 or version > 40:
         raise ValueError(f"Invalid version (was {version}, expected 1 to 40)")
-
-
 def lost_point(modules):
     modules_count = len(modules)
-
     lost_point_ = 0
-
     lost_point_ = _lost_point_level1(modules, modules_count)
     lost_point_ += _lost_point_level2(modules, modules_count)
     lost_point_ += _lost_point_level3(modules, modules_count)
     lost_point_ += _lost_point_level4(modules, modules_count)
-
     return lost_point_
-
-
 def _lost_point_level1(modules, modules_count):
     lost_point = 0
-
     modules_range = range(modules_count)
     container = [0] * (modules_count + 1)
-
     for row in modules_range:
         this_row = modules[row]
         previous_color = this_row[0]
@@ -687,7 +609,6 @@ def _lost_point_level1(modules, modules_count):
                 previous_color = this_row[col]
         if length >= 5:
             container[length] += 1
-
     for col in modules_range:
         previous_color = modules[0][col]
         length = 0
@@ -701,18 +622,13 @@ def _lost_point_level1(modules, modules_count):
                 previous_color = modules[row][col]
         if length >= 5:
             container[length] += 1
-
     lost_point += sum(
         container[each_length] * (each_length - 2)
         for each_length in range(5, modules_count + 1)
     )
-
     return lost_point
-
-
 def _lost_point_level2(modules, modules_count):
     lost_point = 0
-
     modules_range = range(modules_count - 1)
     for row in modules_range:
         this_row = modules[row]
@@ -728,15 +644,11 @@ def _lost_point_level2(modules, modules_count):
                 continue
             else:
                 lost_point += 3
-
     return lost_point
-
-
 def _lost_point_level3(modules, modules_count):
     modules_range = range(modules_count)
     modules_range_short = range(modules_count - 10)
     lost_point = 0
-
     for row in modules_range:
         this_row = modules[row]
         modules_range_short_iter = iter(modules_range_short)
@@ -766,7 +678,6 @@ def _lost_point_level3(modules, modules_count):
                 lost_point += 40
             if this_row[col + 10]:
                 next(modules_range_short_iter, None)
-
     for col in modules_range:
         modules_range_short_iter = iter(modules_range_short)
         row = 0
@@ -795,21 +706,15 @@ def _lost_point_level3(modules, modules_count):
                 lost_point += 40
             if modules[row + 10][col]:
                 next(modules_range_short_iter, None)
-
     return lost_point
-
-
 def _lost_point_level4(modules, modules_count):
     dark_count = sum(map(sum, modules))
     percent = float(dark_count) / (modules_count**2)
     rating = int(abs(percent * 100 - 50) / 5)
     return rating * 10
-
-
 def optimal_data_chunks(data, minimum=4):
     """
     An iterator returning QRData chunks optimized to the data content.
-
     :param minimum: The minimum number of bytes in a row to split as a chunk.
     """
     data = to_bytestring(data)
@@ -830,8 +735,6 @@ def optimal_data_chunks(data, minimum=4):
             for is_alpha, sub_chunk in _optimal_split(chunk, alpha_pattern):
                 mode = MODE_ALPHA_NUM if is_alpha else MODE_8BIT_BYTE
                 yield QRData(sub_chunk, mode=mode, check_data=False)
-
-
 def _optimal_split(data, pattern):
     while data:
         match = re.search(pattern, data)
@@ -844,8 +747,6 @@ def _optimal_split(data, pattern):
         data = data[end:]
     if data:
         yield False, data
-
-
 def to_bytestring(data):
     """
     Convert data to a (utf-8 encoded) byte-string if it isn't a byte-string
@@ -854,8 +755,6 @@ def to_bytestring(data):
     if not isinstance(data, bytes):
         data = str(data).encode("utf-8")
     return data
-
-
 def optimal_mode(data):
     """
     Calculate the optimal mode for this chunk of data.
@@ -865,15 +764,11 @@ def optimal_mode(data):
     if RE_ALPHA_NUM.match(data):
         return MODE_ALPHA_NUM
     return MODE_8BIT_BYTE
-
-
 class QRData:
     """
     Data held in a QR compatible format.
-
     Doesn't currently handle KANJI.
     """
-
     def __init__(self, data, mode=None, check_data=True):
         """
         If ``mode`` isn't provided, the most compact QR data type possible is
@@ -881,7 +776,6 @@ class QRData:
         """
         if check_data:
             data = to_bytestring(data)
-
         if mode is None:
             self.mode = optimal_mode(data)
         else:
@@ -890,12 +784,9 @@ class QRData:
                 raise TypeError(f"Invalid mode ({mode})")  # pragma: no cover
             if check_data and mode < optimal_mode(data):  # pragma: no cover
                 raise ValueError(f"Provided data can not be represented in mode {mode}")
-
         self.data = data
-
     def __len__(self):
         return len(self.data)
-
     def write(self, buffer):
         if self.mode == MODE_NUMBER:
             for i in range(0, len(self.data), 3):
@@ -915,30 +806,22 @@ class QRData:
             data = self.data
             for c in data:
                 buffer.put(c, 8)
-
     def __repr__(self):
         return repr(self.data)
-
-
 class BitBuffer:
     def __init__(self):
         self.buffer: List[int] = []
         self.length = 0
-
     def __repr__(self):
         return ".".join([str(n) for n in self.buffer])
-
     def get(self, index):
         buf_index = math.floor(index / 8)
         return ((self.buffer[buf_index] >> (7 - index % 8)) & 1) == 1
-
     def put(self, num, length):
         for i in range(length):
             self.put_bit(((num >> (length - i - 1)) & 1) == 1)
-
     def __len__(self):
         return self.length
-
     def put_bit(self, bit):
         buf_index = self.length // 8
         if len(self.buffer) <= buf_index:
@@ -946,46 +829,34 @@ class BitBuffer:
         if bit:
             self.buffer[buf_index] |= 0x80 >> (self.length % 8)
         self.length += 1
-
-
 def create_bytes(buffer: BitBuffer, rs_blocks: List[RSBlock]):
     offset = 0
-
     maxDcCount = 0
     maxEcCount = 0
-
     dcdata: List[List[int]] = []
     ecdata: List[List[int]] = []
-
     for rs_block in rs_blocks:
         dcCount = rs_block.data_count
         ecCount = rs_block.total_count - dcCount
-
         maxDcCount = max(maxDcCount, dcCount)
         maxEcCount = max(maxEcCount, ecCount)
-
         current_dc = [0xFF & buffer.buffer[i + offset] for i in range(dcCount)]
         offset += dcCount
-
         if ecCount in rsPoly_LUT:
             rsPoly = Polynomial(rsPoly_LUT[ecCount], 0)
         else:
             rsPoly = Polynomial([1], 0)
             for i in range(ecCount):
                 rsPoly = rsPoly * Polynomial([1, gexp(i)], 0)
-
         rawPoly = Polynomial(current_dc, len(rsPoly) - 1)
-
         modPoly = rawPoly % rsPoly
         current_ec = []
         mod_offset = len(modPoly) - ecCount
         for i in range(ecCount):
             modIndex = i + mod_offset
             current_ec.append(modPoly[modIndex] if (modIndex >= 0) else 0)
-
         dcdata.append(current_dc)
         ecdata.append(current_ec)
-
     data = []
     for i in range(maxDcCount):
         for dc in dcdata:
@@ -995,17 +866,13 @@ def create_bytes(buffer: BitBuffer, rs_blocks: List[RSBlock]):
         for ec in ecdata:
             if i < len(ec):
                 data.append(ec[i])
-
     return data
-
-
 def create_data(version, error_correction, data_list):
     buffer = BitBuffer()
     for data in data_list:
         buffer.put(data.mode, 4)
         buffer.put(len(data), length_in_bits(data.mode, version))
         data.write(buffer)
-
     rs_blocks_ = rs_blocks(version, error_correction)
     bit_limit = sum(block.data_count * 8 for block in rs_blocks_)
     if len(buffer) > bit_limit:
@@ -1013,45 +880,31 @@ def create_data(version, error_correction, data_list):
             "Code length overflow. Data size (%s) > size available (%s)"
             % (len(buffer), bit_limit)
         )
-
     for _ in range(min(bit_limit - len(buffer), 4)):
         buffer.put_bit(False)
-
     delimit = len(buffer) % 8
     if delimit:
         for _ in range(8 - delimit):
             buffer.put_bit(False)
-
     bytes_to_fill = (bit_limit - len(buffer)) // 8
     for i in range(bytes_to_fill):
         if i % 2 == 0:
             buffer.put(PAD0, 8)
         else:
             buffer.put(PAD1, 8)
-
     return create_bytes(buffer, rs_blocks_)
-
-
 class DataOverflowError(Exception):
     pass
-
-
 ModulesType = List[List[Optional[bool]]]
 precomputed_qr_blanks: Dict[int, ModulesType] = {}
-
-
 def _check_box_size(size):
     if int(size) <= 0:
         raise ValueError(f"Invalid box size (was {size}, expected larger than 0)")
-
-
 def _check_border(size):
     if int(size) < 0:
         raise ValueError(
             "Invalid border value (was %s, expected 0 or larger than that)" % size
         )
-
-
 def _check_mask_pattern(mask_pattern):
     if mask_pattern is None:
         return
@@ -1061,12 +914,8 @@ def _check_mask_pattern(mask_pattern):
         )
     if mask_pattern < 0 or mask_pattern > 7:
         raise ValueError(f"Mask pattern should be in range(8) (got {mask_pattern})")
-
-
 def copy_2d_array(x):
     return [row[:] for row in x]
-
-
 class ActiveWithNeighbors(NamedTuple):
     NW: bool
     N: bool
@@ -1077,15 +926,11 @@ class ActiveWithNeighbors(NamedTuple):
     SW: bool
     S: bool
     SE: bool
-
     def __bool__(self) -> bool:
         return self.me
-
-
 class QRCode:
     modules: ModulesType
     _version: Optional[int] = None
-
     def __init__(
         self,
         version=None,
@@ -1101,29 +946,24 @@ class QRCode:
         self.border = int(border)
         self.clear()
         self._mask_pattern = None
-
     @property
     def version(self) -> int:
         if self._version is None:
             self.best_fit()
         return cast(int, self._version)
-
     @version.setter
     def version(self, value) -> None:
         if value is not None:
             value = int(value)
             check_version(value)
         self._version = value
-
     @property
     def mask_pattern(self):
         return self._mask_pattern
-
     @mask_pattern.setter
     def mask_pattern(self, pattern):
         _check_mask_pattern(pattern)
         self._mask_pattern = pattern
-
     def clear(self):
         """
         Reset the internal data.
@@ -1132,11 +972,9 @@ class QRCode:
         self.modules_count = 0
         self.data_cache = None
         self.data_list = []
-
     def add_data(self, data, optimize=20):
         """
         Add data to this QR Code.
-
         :param optimize: Data will be split into multiple chunks to optimize
             the QR size by finding to more compressed modes of at least this
             length. Set to ``0`` to avoid optimizing at all.
@@ -1148,11 +986,9 @@ class QRCode:
         else:
             self.data_list.append(QRData(data))
         self.data_cache = None
-
     def make(self, fit=True):
         """
         Compile the data into a QR Code array.
-
         :param fit: If ``True`` (or if a size has not been provided), find the
             best fit for the data to avoid data overflow errors.
         """
@@ -1162,10 +998,8 @@ class QRCode:
             self.makeImpl(False, self.best_mask_pattern())
         else:
             self.makeImpl(False, self.mask_pattern)
-
     def makeImpl(self, test, mask_pattern):
         self.modules_count = self.version * 4 + 17
-
         if self.version in precomputed_qr_blanks:
             self.modules = copy_2d_array(precomputed_qr_blanks[self.version])
         else:
@@ -1177,29 +1011,22 @@ class QRCode:
             self.setup_position_probe_pattern(0, self.modules_count - 7)
             self.setup_position_adjust_pattern()
             self.setup_timing_pattern()
-
             precomputed_qr_blanks[self.version] = copy_2d_array(self.modules)
-
         self.setup_type_info(test, mask_pattern)
-
         if self.version >= 7:
             self.setup_type_number(test)
-
         if self.data_cache is None:
             self.data_cache = create_data(
                 self.version, self.error_correction, self.data_list
             )
         self.map_data(self.data_cache, mask_pattern)
-
     def setup_position_probe_pattern(self, row, col):
         for r in range(-1, 8):
             if row + r <= -1 or self.modules_count <= row + r:
                 continue
-
             for c in range(-1, 8):
                 if col + c <= -1 or self.modules_count <= col + c:
                     continue
-
                 if (
                     (0 <= r <= 6 and c in {0, 6})
                     or (0 <= c <= 6 and r in {0, 6})
@@ -1208,7 +1035,6 @@ class QRCode:
                     self.modules[row + r][col + c] = True
                 else:
                     self.modules[row + r][col + c] = False
-
     def best_fit(self, start=None):
         """
         Find the minimum size required to fit in the data.
@@ -1216,43 +1042,34 @@ class QRCode:
         if start is None:
             start = 1
         check_version(start)
-
         mode_sizes = mode_sizes_for_version(start)
         buffer = BitBuffer()
         for data in self.data_list:
             buffer.put(data.mode, 4)
             buffer.put(len(data), mode_sizes[data.mode])
             data.write(buffer)
-
         needed_bits = len(buffer)
         self.version = bisect_left(
             BIT_LIMIT_TABLE[self.error_correction], needed_bits, start
         )
         if self.version == 41:
             raise DataOverflowError()
-
         if mode_sizes is not mode_sizes_for_version(self.version):
             self.best_fit(start=self.version)
         return self.version
-
     def best_mask_pattern(self):
         """
         Find the most efficient mask pattern.
         """
         min_lost_point = 0
         pattern = 0
-
         for i in range(8):
             self.makeImpl(True, i)
-
             lost_point_ = lost_point(self.modules)
-
             if i == 0 or min_lost_point > lost_point_:
                 min_lost_point = lost_point_
                 pattern = i
-
         return pattern
-
     def print_tty(self, out=None):
         """
         Output the QR Code only using TTY colors.
@@ -1260,15 +1077,11 @@ class QRCode:
         """
         if out is None:
             import sys
-
             out = sys.stdout
-
         if not out.isatty():
             raise OSError("Not a tty")
-
         if self.data_cache is None:
             self.make()
-
         modcount = self.modules_count
         out.write("\x1b[1;47m" + (" " * (modcount * 2 + 4)) + "\x1b[0m\n")
         for r in range(modcount):
@@ -1281,37 +1094,30 @@ class QRCode:
             out.write("\x1b[1;47m  \x1b[0m\n")
         out.write("\x1b[1;47m" + (" " * (modcount * 2 + 4)) + "\x1b[0m\n")
         out.flush()
-
     def print_ascii(self, out=None, tty=False, invert=False):
         """
         Output the QR Code using ASCII characters.
-
         :param tty: use fixed TTY color codes (forces invert=True)
         :param invert: invert the ASCII characters (solid <-> transparent)
         """
         if out is None:
             out = sys.stdout
-
         if tty and not out.isatty():
             raise OSError("Not a tty")
-
         if self.data_cache is None:
             self.make()
-
         modcount = self.modules_count
         codes = [bytes((code,)).decode("cp437") for code in (255, 223, 220, 219)]
         if tty:
             invert = True
         if invert:
             codes.reverse()
-
         def get_module(x, y) -> int:
             if invert and self.border and max(x, y) >= modcount + self.border:
                 return 1
             if min(x, y) < 0 or max(x, y) >= modcount:
                 return 0
             return cast(int, self.modules[x][y])
-
         for r in range(-self.border, modcount + self.border, 2):
             if tty:
                 if not invert or r < modcount + self.border - 1:
@@ -1324,7 +1130,6 @@ class QRCode:
                 out.write("\x1b[0m")
             out.write("\n")
         out.flush()
-
     def is_constrained(self, row: int, col: int) -> bool:
         return (
             row >= 0
@@ -1332,30 +1137,23 @@ class QRCode:
             and col >= 0
             and col < len(self.modules[row])
         )
-
     def setup_timing_pattern(self):
         for r in range(8, self.modules_count - 8):
             if self.modules[r][6] is not None:
                 continue
             self.modules[r][6] = r % 2 == 0
-
         for c in range(8, self.modules_count - 8):
             if self.modules[6][c] is not None:
                 continue
             self.modules[6][c] = c % 2 == 0
-
     def setup_position_adjust_pattern(self):
         pos = pattern_position(self.version)
-
         for i in range(len(pos)):
             row = pos[i]
-
             for j in range(len(pos)):
                 col = pos[j]
-
                 if self.modules[row][col] is not None:
                     continue
-
                 for r in range(-2, 3):
                     for c in range(-2, 3):
                         if (
@@ -1368,106 +1166,79 @@ class QRCode:
                             self.modules[row + r][col + c] = True
                         else:
                             self.modules[row + r][col + c] = False
-
     def setup_type_number(self, test):
         bits = BCH_type_number(self.version)
-
         for i in range(18):
             mod = not test and ((bits >> i) & 1) == 1
             self.modules[i // 3][i % 3 + self.modules_count - 8 - 3] = mod
-
         for i in range(18):
             mod = not test and ((bits >> i) & 1) == 1
             self.modules[i % 3 + self.modules_count - 8 - 3][i // 3] = mod
-
     def setup_type_info(self, test, mask_pattern):
         data = (self.error_correction << 3) | mask_pattern
         bits = BCH_type_info(data)
-
         for i in range(15):
             mod = not test and ((bits >> i) & 1) == 1
-
             if i < 6:
                 self.modules[i][8] = mod
             elif i < 8:
                 self.modules[i + 1][8] = mod
             else:
                 self.modules[self.modules_count - 15 + i][8] = mod
-
         for i in range(15):
             mod = not test and ((bits >> i) & 1) == 1
-
             if i < 8:
                 self.modules[8][self.modules_count - i - 1] = mod
             elif i < 9:
                 self.modules[8][15 - i - 1 + 1] = mod
             else:
                 self.modules[8][15 - i - 1] = mod
-
         self.modules[self.modules_count - 8][8] = not test
-
     def map_data(self, data, mask_pattern):
         inc = -1
         row = self.modules_count - 1
         bitIndex = 7
         byteIndex = 0
-
         mask_func_ = mask_func(mask_pattern)
-
         data_len = len(data)
-
         for col in range(self.modules_count - 1, 0, -2):
             if col <= 6:
                 col -= 1
-
             col_range = (col, col - 1)
-
             while True:
                 for c in col_range:
                     if self.modules[row][c] is None:
                         dark = False
-
                         if byteIndex < data_len:
                             dark = ((data[byteIndex] >> bitIndex) & 1) == 1
-
                         if mask_func_(row, c):
                             dark = not dark
-
                         self.modules[row][c] = dark
                         bitIndex -= 1
-
                         if bitIndex == -1:
                             byteIndex += 1
                             bitIndex = 7
-
                 row += inc
-
                 if row < 0 or self.modules_count <= row:
                     row -= inc
                     inc = -inc
                     break
-
     def get_matrix(self):
         """
         Return the QR Code as a multidimensional array, including the border.
-
         To return the array without a border, set ``self.border`` to 0 first.
         """
         if self.data_cache is None:
             self.make()
-
         if not self.border:
             return self.modules
-
         width = len(self.modules) + self.border * 2
         code = [[False] * width] * self.border
         x_border = [False] * self.border
         for module in self.modules:
             code.append(x_border + cast(List[bool], module) + x_border)
         code += [[False] * width] * self.border
-
         return code
-
     def active_with_neighbors(self, row: int, col: int) -> ActiveWithNeighbors:
         context: List[bool] = []
         for r in range(row - 1, row + 2):

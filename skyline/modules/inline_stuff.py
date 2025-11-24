@@ -1,21 +1,14 @@
-
-
 import re
 import string
-
 from skylinetl.errors.rpcerrorlist import YouBlockedUserError
 from skylinetl.tl.functions.contacts import UnblockRequest
 from skylinetl.tl.types import Message
-
 from .. import loader, utils
 from ..inline.types import BotInlineMessage, InlineCall
-
 @loader.tds
 class InlineStuff(loader.Module):
     """Provides support for inline stuff"""
-
     strings = {"name": "InlineStuff"}
-
     @loader.watcher(
         "out",
         "only_inline",
@@ -24,18 +17,13 @@ class InlineStuff(loader.Module):
     async def watcher(self, message: Message):
         if message.via_bot_id == self.inline.bot_id:
             await message.delete()
-
     @loader.watcher("out", "only_inline", contains="Opening gallery...")
     async def gallery_watcher(self, message: Message):
         if message.via_bot_id != self.inline.bot_id:
             return
-
         id_ = re.search(r"#id: ([a-zA-Z0-9]+)", message.raw_text)[1]
-
         await message.delete()
-
         m = await message.respond("🪐", reply_to=utils.get_topic(message))
-
         await self.inline.gallery(
             message=m,
             next_handler=self.inline._custom_map[id_]["handler"],
@@ -46,7 +34,6 @@ class InlineStuff(loader.Module):
             ),
             silent=True,
         )
-
     async def _check_bot(self, username: str) -> bool:
         async with self._client.conversation("@BotFather", exclusive=False) as conv:
             try:
@@ -54,28 +41,20 @@ class InlineStuff(loader.Module):
             except YouBlockedUserError:
                 await self._client(UnblockRequest(id="@BotFather"))
                 m = await conv.send_message("/token")
-
             r = await conv.get_response()
-
             await m.delete()
             await r.delete()
-
             if not hasattr(r, "reply_markup") or not hasattr(r.reply_markup, "rows"):
                 return False
-
             for row in r.reply_markup.rows:
                 for button in row.buttons:
                     if username != button.text.strip("@"):
                         continue
-
                     m = await conv.send_message("/cancel")
                     r = await conv.get_response()
-
                     await m.delete()
                     await r.delete()
-
                     return True
-
     @loader.command()
     async def ch_skyline_bot(self, message: Message):
         args = utils.get_args_raw(message).strip("@")
@@ -90,7 +69,6 @@ class InlineStuff(loader.Module):
         ):
             await utils.answer(message, self.strings("bot_username_invalid"))
             return
-
         try:
             await self._client.get_entity(f"@{args}")
         except ValueError:
@@ -99,11 +77,9 @@ class InlineStuff(loader.Module):
             if not await self._check_bot(args):
                 await utils.answer(message, self.strings("bot_username_occupied"))
                 return
-
         self._db.set("skyline.inline", "custom_bot", args)
         self._db.set("skyline.inline", "bot_token", None)
         await utils.answer(message, self.strings("bot_updated"))
-
     @loader.command()
     async def ch_bot_token(self, message: Message):
         args = utils.get_args_raw(message)
@@ -112,19 +88,15 @@ class InlineStuff(loader.Module):
             return
         self._db.set("skyline.inline", "bot_token", args)
         await utils.answer(message, self.strings("bot_updated"))
-
     async def aiogram_watcher(self, message: BotInlineMessage):
         if message.text != "/start" and message.text != "/profile":
             return
-
         if message.text == "/start":
             await message.answer_photo(
                 "https://raw.githubusercontent.com/coddrago/assets/refs/heads/main/skyline/start_cmd.png",
                 caption=self.strings("this_is_skyline"),
             )
-
         if message.text == "/profile":
-            
             if message.from_user.id != self.client.tg_id:
                 await message.answer("❌ You are not allowed to use this")
             else:
@@ -150,11 +122,9 @@ class InlineStuff(loader.Module):
                         ]
                     )
                 )
-
     async def restart(self, call: InlineCall, message):
         await call.edit(self.strings["restart"])
         await self.invoke("restart", "-f", message=message, peer=self.inline.bot.id)
-
     async def reset_prefix(self, call: InlineCall, message):
         await message.answer(self.strings["prefix_reset"])
         self.db.set("skyline.main", "command_prefix", ".")

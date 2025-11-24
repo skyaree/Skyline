@@ -1,5 +1,3 @@
-
-
 import asyncio
 import collections
 import json
@@ -7,19 +5,14 @@ import logging
 import os
 import re
 import time
-
 try:
     import redis
 except ImportError as e:
     if "RAILWAY" in os.environ:
         raise e
-
-
 import typing
-
 from skylinetl.errors.rpcerrorlist import ChannelsTooMuchError
 from skylinetl.tl.types import Message, User
-
 from . import main, utils
 from .pointers import (
     BaseSerializingMiddlewareDict,
@@ -31,7 +24,6 @@ from .pointers import (
 )
 from .tl_cache import CustomTelegramClient
 from .types import JSONSerializable
-
 __all__ = [
     "Database",
     "PointerList",
@@ -41,14 +33,9 @@ __all__ = [
     "BaseSerializingMiddlewareDict",
     "BaseSerializingMiddlewareList",
 ]
-
 logger = logging.getLogger(__name__)
-
-
 class NoAssetsChannel(Exception):
     """Raised when trying to read/store asset with no asset channel present"""
-
-
 class Database(dict):
     def __init__(self, client: CustomTelegramClient):
         super().__init__()
@@ -59,10 +46,8 @@ class Database(dict):
         self._me: User = None
         self._redis: redis.Redis = None
         self._saving_task: asyncio.Future = None
-
     def __repr__(self):
         return object.__repr__(self)
-
     def _redis_save_sync(self):
         with self._redis.pipeline() as pipe:
             pipe.set(
@@ -70,27 +55,22 @@ class Database(dict):
                 json.dumps(self, ensure_ascii=True),
             )
             pipe.execute()
-
     async def remote_force_save(self) -> bool:
         """Force save database to remote endpoint without waiting"""
         if not self._redis:
             return False
-
         await utils.run_sync(self._redis_save_sync)
         logger.debug("Published db to Redis")
         return True
-
     async def _redis_save(self) -> bool:
         """Save database to redis"""
         if not self._redis:
             return False
-
         await asyncio.sleep(5)
         await utils.run_sync(self._redis_save_sync)
         logger.debug("Published db to Redis")
         self._saving_task = None
         return True
-
     async def redis_init(self) -> bool:
         """Init redis database"""
         if REDIS_URI := (
@@ -99,15 +79,12 @@ class Database(dict):
             self._redis = redis.Redis.from_url(REDIS_URI)
         else:
             return False
-
     async def init(self):
         """Asynchronous initialization unit"""
         if os.environ.get("REDIS_URL") or main.get_config_key("redis_uri"):
             await self.redis_init()
-
         self._db_file = main.BASE_PATH / f"config-{self._client.tg_id}.json"
         self.read()
-
         try:
             self._assets, _ = await utils.asset_channel(
                 self._client,
@@ -125,7 +102,6 @@ class Database(dict):
                 "- This error will occur every restart\n\n"
                 "You can solve this by leaving some channels/groups"
             )
-
     def read(self):
         """Read database and stores it in self"""
         if self._redis:
@@ -140,7 +116,6 @@ class Database(dict):
             except Exception:
                 logger.exception("Error reading redis database")
             return
-
         try:
             db = self._db_file.read_text()
             if re.search(r'"(hikka\.)(\S+\":)', db):
@@ -151,11 +126,9 @@ class Database(dict):
             logger.warning("Database read failed! Creating new one...")
         except FileNotFoundError:
             logger.debug("Database file not found, creating new one...")
-
     def process_db_autofix(self, db: dict) -> bool:
         if not utils.is_serializable(db):
             return False
-
         for key, value in db.copy().items():
             if not isinstance(key, (str, int)):
                 logger.warning(
@@ -163,7 +136,6 @@ class Database(dict):
                     key,
                 )
                 continue
-
             if not isinstance(value, dict):
                 del db[key]
                 logger.warning(
@@ -172,7 +144,6 @@ class Database(dict):
                     type(value),
                 )
                 continue
-
             for subkey in value:
                 if not isinstance(subkey, (str, int)):
                     del db[key][subkey]
@@ -185,9 +156,7 @@ class Database(dict):
                         key,
                     )
                     continue
-
         return True
-
     def save(self) -> bool:
         """Save database"""
         if not self.process_db_autofix(self):
@@ -201,34 +170,26 @@ class Database(dict):
                     "database is most likely broken and will lead to problems, "
                     "so its save is forbidden."
                 )
-
             self.clear()
             self.update(**rev)
-
             raise RuntimeError(
                 "Rewriting database to the last revision because new one destructed it"
             )
-
         if self._next_revision_call < time.time():
             self._revisions += [dict(self)]
             self._next_revision_call = time.time() + 3
-
         while len(self._revisions) > 15:
             self._revisions.pop()
-
         if self._redis:
             if not self._saving_task:
                 self._saving_task = asyncio.ensure_future(self._redis_save())
             return True
-
         try:
             self._db_file.write_text(json.dumps(self, indent=4))
         except Exception:
             logger.exception("Database save failed!")
             return False
-
         return True
-
     async def store_asset(self, message: Message) -> int:
         """
         Save assets
@@ -236,7 +197,6 @@ class Database(dict):
         """
         if not self._assets:
             raise NoAssetsChannel("Tried to save asset to non-existing asset channel")
-
         return (
             (await self._client.send_message(self._assets, message)).id
             if isinstance(message, Message)
@@ -248,18 +208,14 @@ class Database(dict):
                 )
             ).id
         )
-
     async def fetch_asset(self, asset_id: int) -> typing.Optional[Message]:
         """Fetch previously saved asset by its asset_id"""
         if not self._assets:
             raise NoAssetsChannel(
                 "Tried to fetch asset from non-existing asset channel"
             )
-
         asset = await self._client.get_messages(self._assets, ids=[asset_id])
-
         return asset[0] if asset else None
-
     def get(
         self,
         owner: str,
@@ -271,7 +227,6 @@ class Database(dict):
             return self[owner][key]
         except KeyError:
             return default
-
     def set(self, owner: str, key: str, value: JSONSerializable) -> bool:
         """Set database key"""
         if not utils.is_serializable(owner):
@@ -280,24 +235,20 @@ class Database(dict):
                 f"{owner=} ({type(owner)=}) of database. It is not "
                 "JSON-serializable key which will cause errors"
             )
-
         if not utils.is_serializable(key):
             raise RuntimeError(
                 "Attempted to write object to "
                 f"{key=} ({type(key)=}) of database. It is not "
                 "JSON-serializable key which will cause errors"
             )
-
         if not utils.is_serializable(value):
             raise RuntimeError(
                 "Attempted to write object of "
                 f"{key=} ({type(value)=}) to database. It is not "
                 "JSON-serializable value which will cause errors"
             )
-
         super().setdefault(owner, {})[key] = value
         return self.save()
-
     def pointer(
         self,
         owner: str,
@@ -312,24 +263,20 @@ class Database(dict):
             dict: PointerDict,
             collections.abc.Hashable: lambda v: v,
         }
-
         pointer_constructor = next(
             (pointer for type_, pointer in mapping.items() if isinstance(value, type_)),
             None,
         )
-
         if (current_value := self.get(owner, key, None)) and type(
             current_value
         ) is not type(default):
             raise ValueError(
                 f"Can't switch the type of pointer in database (current: {type(current_value)}, requested: {type(default)})"
             )
-
         if pointer_constructor is None:
             raise ValueError(
                 f"Pointer for type {type(value).__name__} is not implemented"
             )
-
         if item_type is not None:
             if isinstance(value, list):
                 for item in self.get(owner, key, default):
@@ -338,7 +285,6 @@ class Database(dict):
                             "Item type can only be specified for dedicated keys and"
                             " can't be mixed with other ones"
                         )
-
                 return NamedTupleMiddlewareList(
                     pointer_constructor(self, owner, key, default),
                     item_type,
@@ -350,10 +296,8 @@ class Database(dict):
                             "Item type can only be specified for dedicated keys and"
                             " can't be mixed with other ones"
                         )
-
                 return NamedTupleMiddlewareDict(
                     pointer_constructor(self, owner, key, default),
                     item_type,
                 )
-
         return pointer_constructor(self, owner, key, default)

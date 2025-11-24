@@ -1,21 +1,13 @@
-
-
 import logging
-
 from aiogram.types import CallbackQuery
 from aiogram.types import InlineQuery as AiogramInlineQuery
 from aiogram.types import InlineQueryResultArticle, InputTextMessageContent
 from aiogram.types import Message as AiogramMessage
 from pydantic import ConfigDict
-
 from .. import utils
-
 logger = logging.getLogger(__name__)
-
-
 class InlineMessage:
     """Aiogram message, sent via inline bot"""
-
     def __init__(
         self,
         inline_manager: "InlineManager",  # type: ignore  # noqa: F821
@@ -29,40 +21,30 @@ class InlineMessage:
         self.form = (
             {"id": unit_id, **self._units[unit_id]} if unit_id in self._units else {}
         )
-
     async def edit(self, *args, **kwargs) -> "InlineMessage":
         if "unit_id" in kwargs:
             kwargs.pop("unit_id")
-
         if "inline_message_id" in kwargs:
             kwargs.pop("inline_message_id")
-
         return await self.inline_manager._edit_unit(
             *args,
             unit_id=self.unit_id,
             inline_message_id=self.inline_message_id,
             **kwargs,
         )
-
     async def delete(self) -> bool:
         entity = self._units.get(self.unit_id)
         if not entity:
             return await self.original_call.answer("msg not found", show_alert=True)
-
         msgid = entity.get("message_id")
         cid = entity.get("chat")
-
         await self.inline_manager._client.delete_messages(cid, msgid)
         if hasattr(self, "original_call"):
             return await self.original_call.answer("")
-
     async def unload(self) -> bool:
         return await self.inline_manager._unload_unit(unit_id=self.unit_id)
-
-
 class BotInlineMessage:
     """Aiogram message, sent through inline bot itself"""
-
     def __init__(
         self,
         inline_manager: "InlineManager",  # type: ignore  # noqa: F821
@@ -78,17 +60,13 @@ class BotInlineMessage:
         self.form = (
             {"id": unit_id, **self._units[unit_id]} if unit_id in self._units else {}
         )
-
     async def edit(self, *args, **kwargs) -> "BotMessage":
         if "unit_id" in kwargs:
             kwargs.pop("unit_id")
-
         if "message_id" in kwargs:
             kwargs.pop("message_id")
-
         if "chat_id" in kwargs:
             kwargs.pop("chat_id")
-
         return await self.inline_manager._edit_unit(
             *args,
             unit_id=self.unit_id,
@@ -96,7 +74,6 @@ class BotInlineMessage:
             message_id=self.message_id,
             **kwargs,
         )
-
     async def delete(self) -> bool:
         return await self.inline_manager._delete_unit_message(
             self,
@@ -104,22 +81,17 @@ class BotInlineMessage:
             chat_id=self.chat_id,
             message_id=self.message_id,
         )
-
     async def unload(self, *args, **kwargs) -> bool:
         if "unit_id" in kwargs:
             kwargs.pop("unit_id")
-
         return await self.inline_manager._unload_unit(
             *args,
             unit_id=self.unit_id,
             **kwargs,
         )
-
-
 class InlineCall(CallbackQuery, InlineMessage):
     """Modified version of classic aiogram `CallbackQuery`"""
     model_config = ConfigDict(frozen=False)
-
     def __init__(
         self,
         call: CallbackQuery,
@@ -131,23 +103,17 @@ class InlineCall(CallbackQuery, InlineMessage):
             dump["id"] = dump.pop("result_id")
         dump["chat_instance"] = ""
         CallbackQuery.__init__(self, **dump)
-
         self.as_(inline_manager.bot)
-
         self.original_call = call
-
         InlineMessage.__init__(
             self,
             inline_manager,
             unit_id,
             call.inline_message_id,
         )
-
-
 class BotInlineCall(CallbackQuery, BotInlineMessage):
     """Modified version of classic aiogram `CallbackQuery`"""
     model_config = ConfigDict(frozen=False)
-
     def __init__(
         self,
         call: CallbackQuery,
@@ -155,9 +121,7 @@ class BotInlineCall(CallbackQuery, BotInlineMessage):
         unit_id: str,
     ):
         CallbackQuery.__init__(self, **call.model_dump())
-
         self.original_call = call
-
         BotInlineMessage.__init__(
             self,
             inline_manager,
@@ -165,37 +129,25 @@ class BotInlineCall(CallbackQuery, BotInlineMessage):
             call.message.chat.id,
             call.message.message_id,
         )
-
-
 class InlineUnit:
     """InlineManager extension type. For internal use only"""
-
     def __init__(self):
         """Made just for type specification"""
-
-
 class BotMessage(AiogramMessage):
     """Modified version of original Aiogram Message"""
-
     def __init__(self):
         super().__init__()
-
-
 class InlineQuery(AiogramInlineQuery):
     """Modified version of original Aiogram InlineQuery"""
-
     model_config = ConfigDict(frozen=False)
-
     def __init__(self, inline_query: AiogramInlineQuery):
         super().__init__(**inline_query.model_dump())
-
         self.inline_query = inline_query
         self.args = (
             self.inline_query.query.split(maxsplit=1)[1]
             if len(self.inline_query.query.split()) > 1
             else ""
         )
-
     @staticmethod
     def _get_res(title: str, description: str, thumbnail_url: str) -> list:
         return [
@@ -212,7 +164,6 @@ class InlineQuery(AiogramInlineQuery):
                 thumb_height=128,
             )
         ]
-
     async def e400(self):
         await self.answer(
             self._get_res(
@@ -225,7 +176,6 @@ class InlineQuery(AiogramInlineQuery):
             ),
             cache_time=0,
         )
-
     async def e403(self):
         await self.answer(
             self._get_res(
@@ -235,7 +185,6 @@ class InlineQuery(AiogramInlineQuery):
             ),
             cache_time=0,
         )
-
     async def e404(self):
         await self.answer(
             self._get_res(
@@ -245,7 +194,6 @@ class InlineQuery(AiogramInlineQuery):
             ),
             cache_time=0,
         )
-
     async def e426(self):
         await self.answer(
             self._get_res(
@@ -255,7 +203,6 @@ class InlineQuery(AiogramInlineQuery):
             ),
             cache_time=0,
         )
-
     async def e500(self):
         await self.answer(
             self._get_res(

@@ -1,13 +1,7 @@
-
-
 import logging
 import typing
-
 from .types import InlineUnit
-
 logger = logging.getLogger(__name__)
-
-
 class BotPM(InlineUnit):
     def set_fsm_state(
         self,
@@ -30,7 +24,6 @@ class BotPM(InlineUnit):
                 type(user),
             )
             return False
-
         if not isinstance(state, (str, bool)):
             logger.error(
                 (
@@ -40,16 +33,12 @@ class BotPM(InlineUnit):
                 type(state),
             )
             return False
-
         if state:
             self.fsm[str(user)] = state
         elif str(user) in self.fsm:
             del self.fsm[str(user)]
-
         return True
-
     ss = set_fsm_state
-
     def get_fsm_state(self, user: typing.Union[str, int]) -> typing.Union[bool, str]:
         """
         Get FSM state for user
@@ -66,7 +55,5 @@ class BotPM(InlineUnit):
                 type(user),
             )
             return False
-
         return self.fsm.get(str(user), False)
-
     gs = get_fsm_state

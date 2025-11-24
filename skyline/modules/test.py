@@ -1,5 +1,3 @@
-
-
 import getpass
 import platform as lib_platform
 import inspect
@@ -9,32 +7,22 @@ import random
 import time
 import typing
 from io import BytesIO
-
 from skylinetl.tl.types import Message
 from skylinetl.types import InputMediaWebPage
-
 from .. import loader, main, utils
 from ..inline.types import InlineCall
-
 logger = logging.getLogger(__name__)
-
 DEBUG_MODS_DIR = os.path.join(utils.get_base_dir(), "debug_modules")
-
 if not os.path.isdir(DEBUG_MODS_DIR):
     os.mkdir(DEBUG_MODS_DIR, mode=0o755)
-
 for mod in os.scandir(DEBUG_MODS_DIR):
     os.remove(mod.path)
-
-
 @loader.tds
 class TestMod(loader.Module):
     """Perform operations based on userbot self-testing"""
-
     strings = {
         "name": "Tester",
     }
-
     def __init__(self):
         self._memory = {}
         self.config = loader.ModuleConfig(
@@ -115,7 +103,6 @@ class TestMod(loader.Module):
                 validator=loader.validators.Boolean(),
             ),
         )
-
     def _pass_config_to_logger(self):
         logging.getLogger().handlers[0].force_send_all = self.config["force_send_all"]
         logging.getLogger().handlers[0].tg_level = {
@@ -128,33 +115,26 @@ class TestMod(loader.Module):
             "DISABLE": 50000,
         }[self.config["tglog_level"]]
         logging.getLogger().handlers[0].ignore_common = self.config["ignore_common"]
-
     @loader.command()
     async def clearlogs(self, message: Message):
         for handler in logging.getLogger().handlers:
             handler.buffer = []
             handler.handledbuffer = []
             handler.tg_buff = ""
-
         await utils.answer(message, self.strings("logs_cleared"))
-
     @loader.loop(interval=1, autostart=True)
     async def watchdog(self):
         if not os.path.isdir(DEBUG_MODS_DIR):
             return
-
         try:
             for module in os.scandir(DEBUG_MODS_DIR):
                 last_modified = os.stat(module.path).st_mtime
                 cls_ = module.path.split("/")[-1].split(".py")[0]
-
                 if cls_ not in self._memory:
                     self._memory[cls_] = last_modified
                     continue
-
                 if self._memory[cls_] == last_modified:
                     continue
-
                 self._memory[cls_] = last_modified
                 logger.debug("Reloading debug module %s", cls_)
                 with open(module.path, "r") as f:
@@ -173,7 +153,6 @@ class TestMod(loader.Module):
         except Exception:
             logger.exception("Failed debugging watchdog")
             return
-
     @loader.command()
     async def debugmod(self, message: Message):
         """| debug mod for your modules!"""
@@ -196,23 +175,18 @@ class TestMod(loader.Module):
                             f"{module.__class__.__name__}.py",
                         )
                     )
-
                     try:
                         delattr(module, "skyline_debug")
                     except AttributeError:
                         pass
-
                     await utils.answer(message, self.strings("debugging_disabled"))
                     return
-
                 module.skyline_debug = True
                 instance = module
                 break
-
         if not instance:
             await utils.answer(message, self.strings("bad_module"))
             return
-
         with open(
             os.path.join(
                 DEBUG_MODS_DIR,
@@ -221,12 +195,10 @@ class TestMod(loader.Module):
             "wb",
         ) as f:
             f.write(inspect.getmodule(instance).__loader__.data)
-
         await utils.answer(
             message,
             self.strings("debugging_enabled").format(instance.__class__.__name__),
         )
-
     @loader.command()
     async def logs(
         self,
@@ -246,7 +218,6 @@ class TestMod(loader.Module):
                     lvl = None
             else:
                 lvl = None
-
         if not isinstance(lvl, int):
             try:
                 if self.inline.init_complete:
@@ -277,9 +248,7 @@ class TestMod(loader.Module):
                     raise
             except Exception as e:
                 await utils.answer(message, self.strings("set_loglevel") + f"\n{e}")
-
             return
-
         logs = "\n\n".join(
             [
                 "\n".join(
@@ -290,13 +259,11 @@ class TestMod(loader.Module):
                 for handler in logging.getLogger().handlers
             ]
         )
-
         named_lvl = (
             lvl
             if lvl not in logging._levelToName
             else logging._levelToName[lvl]  # skipcq: PYL-W0212
         )
-
         if (
             lvl < logging.WARNING
             and not force
@@ -308,7 +275,6 @@ class TestMod(loader.Module):
             try:
                 if not self.inline.init_complete:
                     raise
-
                 cfg = {
                     "text": self.strings("confidential").format(named_lvl),
                     "reply_markup": [
@@ -330,21 +296,15 @@ class TestMod(loader.Module):
                     message,
                     self.strings("confidential_text").format(named_lvl),
                 )
-
             return
-
         if len(logs) <= 2:
             back_button = {"text": self.strings["back"], "callback": self.logs}
             await utils.answer(message, self.strings("no_logs").format(named_lvl), reply_markup=back_button)
             return
-
         logs = self.lookup("evaluator").censor(logs)
-
         logs = BytesIO(logs.encode("utf-16"))
         logs.name = "skyline-logs.txt"
-
         ghash = utils.get_git_hash()
-
         other = (
             *main.__version__,
             (
@@ -354,10 +314,8 @@ class TestMod(loader.Module):
                 else ""
             ),
         )
-
         if getattr(message, "out", True):
             await message.delete()
-
         if isinstance(message, Message):
             await utils.answer(
                 message,
@@ -371,7 +329,6 @@ class TestMod(loader.Module):
                 caption=self.strings("logs_caption").format(named_lvl, *other),
                 reply_to=message.form["top_msg_id"],
             )
-
     @loader.command()
     async def suspend(self, message: Message):
         try:
@@ -383,7 +340,6 @@ class TestMod(loader.Module):
             time.sleep(time_sleep)
         except ValueError:
             await utils.answer(message, self.strings("suspend_invalid_time"))
-
     @loader.command()
     async def ping(self, message: Message):
         """- Find out your userbot ping"""
@@ -392,7 +348,6 @@ class TestMod(loader.Module):
         banner = self.config["banner_url"]
         if self.config["banner_url"] and self.config["quote_media"] is True:
             banner = InputMediaWebPage(self.config["banner_url"], optional = True)
-        
         await utils.answer(
             message,
             self.config["Text_Of_Ping"].format(
@@ -407,8 +362,6 @@ class TestMod(loader.Module):
             file = banner,
             invert_media = self.config["invert_media"]
         )
-
-
     async def client_ready(self):
         chat, _ = await utils.asset_channel(
             self._client,
@@ -418,10 +371,7 @@ class TestMod(loader.Module):
             invite_bot=True,
             avatar="https://raw.githubusercontent.com/coddrago/assets/refs/heads/main/skyline/skyline_logs.png",
         )
-
         self.logchat = int(f"-100{chat.id}")
-
         logging.getLogger().handlers[0].install_tg_log(self)
         logger.debug("Bot logging installed for %s", self.logchat)
-
         self._pass_config_to_logger()

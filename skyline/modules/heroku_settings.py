@@ -1,8 +1,5 @@
-
-
 import logging
 import random
-
 import skylinetl
 from skylinetl.tl.functions.messages import (
     GetDialogFiltersRequest,
@@ -10,13 +7,10 @@ from skylinetl.tl.functions.messages import (
 )
 from skylinetl.tl.types import Message
 from skylinetl.utils import get_display_name
-
 from .. import loader, log, main, utils
 from .._internal import fw_protect, restart
 from ..inline.types import InlineCall
-
 logger = logging.getLogger(__name__)
-
 ALL_INVOKES = [
     "flush_entity_cache",
     "flush_fulluser_cache",
@@ -28,24 +22,18 @@ ALL_INVOKES = [
     "inspect_cache",
     "inspect_modules",
 ]
-
-
 @loader.tds
 class SkylineSettingsMod(loader.Module):
     """Advanced settings for Skyline Userbot"""
-
     strings = {"name": "SkylineSettings"}
-
     def get_watchers(self) -> tuple:
         return [
             str(watcher.__self__.__class__.strings["name"])
             for watcher in self.allmodules.watchers
             if watcher.__self__.__class__.strings is not None
         ], self._db.get(main.__name__, "disabled_watchers", {})
-
     async def _uninstall(self, call: InlineCall):
         await call.edit(self.strings("uninstall"))
-
         async with self._client.conversation("@BotFather") as conv:
             for msg in [
                 "/deletebot",
@@ -55,15 +43,11 @@ class SkylineSettingsMod(loader.Module):
                 await fw_protect()
                 m = await conv.send_message(msg)
                 r = await conv.get_response()
-
                 logger.debug(">> %s", m.raw_text)
                 logger.debug("<< %s", r.raw_text)
-
                 await fw_protect()
-
                 await m.delete()
                 await r.delete()
-
         async for dialog in self._client.iter_dialogs(
             None,
             ignore_migrated=True,
@@ -91,11 +75,8 @@ class SkylineSettingsMod(loader.Module):
             ):
                 await fw_protect()
                 await self._client.delete_dialog(dialog.entity)
-
         await fw_protect()
-
         folders = await self._client(GetDialogFiltersRequest())
-
         if any(folder.title == "skyline" for folder in folders):
             folder_id = max(
                 folders,
@@ -103,16 +84,11 @@ class SkylineSettingsMod(loader.Module):
             ).id
             await fw_protect()
             await self._client(UpdateDialogFilterRequest(id=folder_id))
-
         for handler in logging.getLogger().handlers:
             handler.setLevel(logging.CRITICAL)
-
         await fw_protect()
-
         await self._client.log_out()
-
         restart()
-
     async def _uninstall_confirm_step_2(self, call: InlineCall):
         await call.edit(
             self.strings("deauth_confirm_step2"),
@@ -146,7 +122,6 @@ class SkylineSettingsMod(loader.Module):
                 ]
             ],
         )
-
     @loader.command()
     async def uninstall_skyline(self, message: Message):
         await self.inline.form(
@@ -160,7 +135,6 @@ class SkylineSettingsMod(loader.Module):
                 {"text": self.strings("deauth_cancel"), "action": "close"},
             ],
         )
-
     @loader.command()
     async def watchers(self, message: Message):
         watchers, disabled_watchers = self.get_watchers()
@@ -173,26 +147,20 @@ class SkylineSettingsMod(loader.Module):
         await utils.answer(
             message, self.strings("watchers").format("\n".join(watchers))
         )
-
     @loader.command()
     async def watcherbl(self, message: Message):
         if not (args := utils.get_args_raw(message)):
             await utils.answer(message, self.strings("args"))
             return
-
         watchers, disabled_watchers = self.get_watchers()
-
         if args.lower() not in map(lambda x: x.lower(), watchers):
             await utils.answer(message, self.strings("mod404").format(args))
             return
-
         args = next((x.lower() == args.lower() for x in watchers), False)
-
         current_bl = [
             v for k, v in disabled_watchers.items() if k.lower() == args.lower()
         ]
         current_bl = current_bl[0] if current_bl else []
-
         chat = utils.get_chat_id(message)
         if chat not in current_bl:
             if args in disabled_watchers:
@@ -202,7 +170,6 @@ class SkylineSettingsMod(loader.Module):
                         break
             else:
                 disabled_watchers[args] = [chat]
-
             await utils.answer(
                 message,
                 self.strings("disabled").format(args) + " <b>in current chat</b>",
@@ -214,49 +181,36 @@ class SkylineSettingsMod(loader.Module):
                     if not disabled_watchers[k]:
                         del disabled_watchers[k]
                     break
-
             await utils.answer(
                 message,
                 self.strings("enabled").format(args) + " <b>in current chat</b>",
             )
-
         self._db.set(main.__name__, "disabled_watchers", disabled_watchers)
-
     @loader.command()
     async def watchercmd(self, message: Message):
         if not (args := utils.get_args_raw(message)):
             return await utils.answer(message, self.strings("args"))
-
         chats, pm, out, incoming = False, False, False, False
-
         if "-c" in args:
             args = args.replace("-c", "").replace("  ", " ").strip()
             chats = True
-
         if "-p" in args:
             args = args.replace("-p", "").replace("  ", " ").strip()
             pm = True
-
         if "-o" in args:
             args = args.replace("-o", "").replace("  ", " ").strip()
             out = True
-
         if "-i" in args:
             args = args.replace("-i", "").replace("  ", " ").strip()
             incoming = True
-
         if chats and pm:
             pm = False
         if out and incoming:
             incoming = False
-
         watchers, disabled_watchers = self.get_watchers()
-
         if args.lower() not in [watcher.lower() for watcher in watchers]:
             return await utils.answer(message, self.strings("mod404").format(args))
-
         args = [watcher for watcher in watchers if watcher.lower() == args.lower()][0]
-
         if chats or pm or out or incoming:
             disabled_watchers[args] = [
                 *(["only_chats"] if chats else []),
@@ -271,27 +225,22 @@ class SkylineSettingsMod(loader.Module):
                 + f" (<code>{disabled_watchers[args]}</code>)",
             )
             return
-
         if args in disabled_watchers and "*" in disabled_watchers[args]:
             await utils.answer(message, self.strings("enabled").format(args))
             del disabled_watchers[args]
             self._db.set(main.__name__, "disabled_watchers", disabled_watchers)
             return
-
         disabled_watchers[args] = ["*"]
         self._db.set(main.__name__, "disabled_watchers", disabled_watchers)
         await utils.answer(message, self.strings("disabled").format(args))
-
     @loader.command()
     async def nonickuser(self, message: Message):
         if not (reply := await message.get_reply_message()):
             await utils.answer(message, self.strings("reply_required"))
             return
-
         u = reply.sender_id
         if not isinstance(u, int):
             u = u.user_id
-
         nn = self._db.get(main.__name__, "nonickusers", [])
         if u not in nn:
             nn += [u]
@@ -300,17 +249,13 @@ class SkylineSettingsMod(loader.Module):
         else:
             nn = list(set(nn) - {u})
             await utils.answer(message, self.strings("user_nn").format("off"))
-
         self._db.set(main.__name__, "nonickusers", nn)
-
     @loader.command()
     async def nonickchat(self, message: Message):
         if message.is_private:
             await utils.answer(message, self.strings("private_not_allowed"))
             return
-
         chat = utils.get_chat_id(message)
-
         nn = self._db.get(main.__name__, "nonickchats", [])
         if chat not in nn:
             nn += [chat]
@@ -331,19 +276,15 @@ class SkylineSettingsMod(loader.Module):
                     "off",
                 ),
             )
-
         self._db.set(main.__name__, "nonickchats", nn)
-
     @loader.command()
     async def nonickcmdcmd(self, message: Message):
         if not (args := utils.get_args_raw(message)):
             await utils.answer(message, self.strings("no_cmd"))
             return
-
         if args not in self.allmodules.commands:
             await utils.answer(message, self.strings("cmd404"))
             return
-
         nn = self._db.get(main.__name__, "nonickcmds", [])
         if args not in nn:
             nn += [args]
@@ -364,15 +305,12 @@ class SkylineSettingsMod(loader.Module):
                     "off",
                 ),
             )
-
         self._db.set(main.__name__, "nonickcmds", nn)
-
     @loader.command()
     async def nonickcmds(self, message: Message):
         if not self._db.get(main.__name__, "nonickcmds", []):
             await utils.answer(message, self.strings("nothing"))
             return
-
         await utils.answer(
             message,
             self.strings("cmd_nn_list").format(
@@ -384,7 +322,6 @@ class SkylineSettingsMod(loader.Module):
                 )
             ),
         )
-
     @loader.command()
     async def nonickusers(self, message: Message):
         users = []
@@ -402,26 +339,21 @@ class SkylineSettingsMod(loader.Module):
                         )
                     ),
                 )
-
                 logger.warning("User %s removed from nonickusers list", user_id)
                 continue
-
             users += [
                 '▫️ <b><a href="tg://user?id={}">{}</a></b>'.format(
                     user_id,
                     utils.escape_html(get_display_name(user)),
                 )
             ]
-
         if not users:
             await utils.answer(message, self.strings("nothing"))
             return
-
         await utils.answer(
             message,
             self.strings("user_nn_list").format("\n".join(users)),
         )
-
     @loader.command()
     async def nonickchats(self, message: Message):
         chats = []
@@ -436,26 +368,21 @@ class SkylineSettingsMod(loader.Module):
                         (set(self._db.get(main.__name__, "nonickchats", [])) - {chat})
                     ),
                 )
-
                 logger.warning("Chat %s removed from nonickchats list", chat)
                 continue
-
             chats += [
                 '▫️ <b><a href="{}">{}</a></b>'.format(
                     utils.get_entity_url(chat_entity),
                     utils.escape_html(get_display_name(chat_entity)),
                 )
             ]
-
         if not chats:
             await utils.answer(message, self.strings("nothing"))
             return
-
         await utils.answer(
             message,
             self.strings("user_nn_list").format("\n".join(chats)),
         )
-
     async def inline__setting(self, call: InlineCall, key: str, state: bool = False):
         if callable(key):
             key()
@@ -464,7 +391,6 @@ class SkylineSettingsMod(loader.Module):
             )
         else:
             self._db.set(main.__name__, key, state)
-
         if key == "no_nickname" and state and self.get_prefix() == ".":
             await call.answer(
                 self.strings("nonick_warning"),
@@ -472,12 +398,10 @@ class SkylineSettingsMod(loader.Module):
             )
         else:
             await call.answer("Configuration value saved!")
-
         await call.edit(
             self.strings("inline_settings"),
             reply_markup=self._get_settings_markup(),
         )
-
     async def inline__update(
         self,
         call: InlineCall,
@@ -492,15 +416,12 @@ class SkylineSettingsMod(loader.Module):
                 ],
             )
             return
-
         await call.answer("You userbot is being updated...", show_alert=True)
         await call.delete()
         await self.invoke("update", "-f", peer="me")
-
     async def _remove_core_protection(self, call: InlineCall):
         self._db.set(main.__name__, "remove_core_protection", True)
         await call.edit(self.strings("core_protection_removed"))
-
     @loader.command()
     async def remove_core_protection(self, message: Message):
         if self._db.get(main.__name__, "remove_core_protection") == True:
@@ -521,11 +442,9 @@ class SkylineSettingsMod(loader.Module):
                     },
                 ],
             )
-
     async def _enable_core_protection(self, call: InlineCall):
         self._db.set(main.__name__, "remove_core_protection", False)
         await call.edit(self.strings("core_protection_enabled"))
-
     @loader.command()
     async def enable_core_protection(self, message: Message):
         if self._db.get(main.__name__, "remove_core_protection") == False:
@@ -546,7 +465,6 @@ class SkylineSettingsMod(loader.Module):
                     },
                 ],
             )
-
     async def inline__restart(
         self,
         call: InlineCall,
@@ -561,11 +479,9 @@ class SkylineSettingsMod(loader.Module):
                 ],
             )
             return
-
         await call.answer("You userbot is being restarted...", show_alert=True)
         await call.delete()
         await self.invoke("restart", "-f", peer="me")
-
     def _get_settings_markup(self) -> list:
         return [
             [
@@ -740,7 +656,6 @@ class SkylineSettingsMod(loader.Module):
             ],
             [{"text": self.strings("close_menu"), "action": "close"}],
         ]
-
     @loader.command()
     async def settings(self, message: Message):
         await self.inline.form(
@@ -748,7 +663,6 @@ class SkylineSettingsMod(loader.Module):
             message=message,
             reply_markup=self._get_settings_markup(),
         )
-
     def _get_all_IDM(self, module: str):
         return {
             getattr(getattr(self.lookup(module), name), "name", name): getattr(
@@ -757,20 +671,16 @@ class SkylineSettingsMod(loader.Module):
             for name in dir(self.lookup(module))
             if getattr(getattr(self.lookup(module), name), "is_debug_method", False)
         }
-
     @loader.command()
     async def invokecmd(self, message: Message):
         if not (args := utils.get_args_raw(message)) or len(args.split()) < 2:
             await utils.answer(message, self.strings("no_args"))
             return
-
         module = args.split()[0]
         method = args.split(maxsplit=1)[1]
-
         if module != "core" and not self.lookup(module):
             await utils.answer(message, self.strings("module404").format(module))
             return
-
         if (
             module == "core"
             and method not in ALL_INVOKES
@@ -779,12 +689,10 @@ class SkylineSettingsMod(loader.Module):
         ):
             await utils.answer(message, self.strings("invoke404").format(method))
             return
-
         message = await utils.answer(
             message, self.strings("invoking").format(method, module)
         )
         result = ""
-
         if module == "core":
             if method == "flush_entity_cache":
                 result = (
@@ -853,7 +761,6 @@ class SkylineSettingsMod(loader.Module):
                 )
         else:
             result = await self._get_all_IDM(module)[method](message)
-
         await utils.answer(
             message,
             self.strings("invoke").format(method, utils.escape_html(result)),

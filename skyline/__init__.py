@@ -1,8 +1,4 @@
 """Just a placeholder to do relative imports"""
-
-
-
-
 __author__ = "hikariatama"
 __ForkAuthor__ = "Skyaree"
 __contact__ = "me@hikariatama.ru"
@@ -11,4 +7,3 @@ __credits__ = ["LonamiWebs", "penn5"]
 __license__ = "AGPLv3"
 __maintainer__ = "developer"
 __status__ = "Production"
-

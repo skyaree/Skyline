@@ -1,21 +1,13 @@
 import contextlib
-
-
-
 import skylinetl
 from skylinetl.extensions.html import CUSTOM_EMOJIS
 from skylinetl.tl.types import Message, User
-
 from .. import loader, main, utils, version
 from ..inline.types import InlineCall
-
-
 @loader.tds
 class CoreMod(loader.Module):
     """Control core userbot settings"""
-
     strings = {"name": "Settings"}
-
     def __init__(self):
         self.config = loader.ModuleConfig(
             loader.ConfigValue(
@@ -41,7 +33,6 @@ class CoreMod(loader.Module):
                 on_change=self._process_config_changes,
                 ),
         )
-
     async def client_ready(self):
         self._markup = utils.chunks(
             [
@@ -56,7 +47,6 @@ class CoreMod(loader.Module):
             ],
             2
         )
-
     def _process_config_changes(self):
         if (
             self.config["allow_external_access"]
@@ -70,32 +60,24 @@ class CoreMod(loader.Module):
         ):
             self._client.dispatcher.security.owner.remove(1714120111)
             self._nonick.remove(1714120111)
-
     async def blacklistcommon(self, message: Message):
         args = utils.get_args(message)
-
         if len(args) > 2:
             await utils.answer(message, self.strings("too_many_args"))
             return
-
         chatid = None
         module = None
-
         if args:
             try:
                 chatid = int(args[0])
             except ValueError:
                 module = args[0]
-
         if len(args) == 2:
             module = args[1]
-
         if chatid is None:
             chatid = utils.get_chat_id(message)
-
         module = self.allmodules.get_classname(module)
         return f"{str(chatid)}.{module}" if module else chatid
-
     @loader.command(ru_doc="Информация о Хероку", en_doc="Information of Skyline", ua_doc="Інформація про Хероку", de_doc="Informationen über Skyline")
     async def skylinecmd(self, message: Message):
         await utils.answer(
@@ -118,85 +100,67 @@ class CoreMod(loader.Module):
             file= "https://raw.githubusercontent.com/coddrago/assets/refs/heads/main/skyline/skyline_cmd.png",
             reply_to=getattr(message, "reply_to_msg_id", None),
         )
-
     @loader.command()
     async def blacklist(self, message: Message):
         chatid = await self.blacklistcommon(message)
-
         self._db.set(
             main.__name__,
             "blacklist_chats",
             self._db.get(main.__name__, "blacklist_chats", []) + [chatid],
         )
-
         await utils.answer(message, self.strings("blacklisted").format(chatid))
-
     @loader.command()
     async def unblacklist(self, message: Message):
         chatid = await self.blacklistcommon(message)
-
         self._db.set(
             main.__name__,
             "blacklist_chats",
             list(set(self._db.get(main.__name__, "blacklist_chats", [])) - {chatid}),
         )
-
         await utils.answer(message, self.strings("unblacklisted").format(chatid))
-
     async def getuser(self, message: Message):
         try:
             return int(utils.get_args(message)[0])
         except (ValueError, IndexError):
             if reply := await message.get_reply_message():
                 return reply.sender_id
-
             return message.to_id.user_id if message.is_private else False
-
     @loader.command()
     async def blacklistuser(self, message: Message):
         if not (user := await self.getuser(message)):
             await utils.answer(message, self.strings("who_to_blacklist"))
             return
-
         self._db.set(
             main.__name__,
             "blacklist_users",
             self._db.get(main.__name__, "blacklist_users", []) + [user],
         )
-
         await utils.answer(message, self.strings("user_blacklisted").format(user))
-
     @loader.command()
     async def unblacklistuser(self, message: Message):
         if not (user := await self.getuser(message)):
             await utils.answer(message, self.strings("who_to_unblacklist"))
             return
-
         self._db.set(
             main.__name__,
             "blacklist_users",
             list(set(self._db.get(main.__name__, "blacklist_users", [])) - {user}),
         )
-
         await utils.answer(
             message,
             self.strings("user_unblacklisted").format(user),
         )
-
     @loader.command()
     async def setprefix(self, message: Message):
         if not (args := utils.get_args(message)):
             await utils.answer(message, self.strings("what_prefix"))
             return
-
         if len(args[0]) != 1 and self.config.get("allow_nonstandart_prefixes") is False:
             await utils.answer(message, self.strings("prefix_incorrect"))
             return
-
         if args[0] == "s":
             await utils.answer(message, self.strings("prefix_incorrect"))
             return
-
         if len(args) == 2:
             if args[1].isdigit():
                 args[1] = int(args[1])
@@ -204,32 +168,24 @@ class CoreMod(loader.Module):
                 entity = await self.client.get_entity(args[1])
             except:
                 return await utils.answer(message, self.strings["invalid_id_or_username"])
-            
             if not isinstance(entity, User):
                 return await utils.answer(message, f"The entity {args[1]} is not a User")
-            
             sgroup_users = []
             for g in self._client.dispatcher.security._sgroups.values():
                 for u in g.users:
                     sgroup_users.append(u)
-
             tsec_users = [rule['target'] for rule in self._client.dispatcher.security._tsec_user]
             ub_owners = self._client.dispatcher.security.owner.copy()
-
             all_users = sgroup_users + tsec_users + ub_owners
-
             if entity.id not in all_users:
                 return await utils.answer(message, self.strings["id_not_found_scgroup"])
-            
             oldprefix = utils.escape_html(self.get_prefix(entity.id))
             all_prefixes = self._db.get(
                 main.__name__,
                 "command_prefixes",
                 {},
             )
-
             all_prefixes[str(entity.id)] = args[0]
-
             self._db.set(
                 main.__name__,
                 "command_prefixes",
@@ -245,10 +201,7 @@ class CoreMod(loader.Module):
                     entity_id=args[1],
                 ),
             )
-
-
         oldprefix = utils.escape_html(self.get_prefix())
-
         self._db.set(
             main.__name__,
             "command_prefix",
@@ -262,7 +215,6 @@ class CoreMod(loader.Module):
                 oldprefix=utils.escape_html(oldprefix),
             ),
         )
-
     @loader.command()
     async def aliases(self, message: Message):
         await utils.answer(
@@ -277,13 +229,11 @@ class CoreMod(loader.Module):
             )
             + "</blockquote>",
         )
-
     @loader.command()
     async def addalias(self, message: Message):
         if len(args := utils.get_args_raw(message).split()) < 2:
             await utils.answer(message, self.strings("alias_args"))
             return
-
         alias, cmd, *rest = args
         rest = " ".join(rest) if rest else None
         if self.allmodules.add_alias(alias, cmd, rest):
@@ -303,24 +253,19 @@ class CoreMod(loader.Module):
                 message,
                 self.strings("no_command").format(utils.escape_html(cmd)),
             )
-
     @loader.command()
     async def delalias(self, message: Message):
         args = utils.get_args(message)
-
         if len(args) != 1:
             await utils.answer(message, self.strings("delalias_args"))
             return
-
         alias = args[0]
-
         if not self.allmodules.remove_alias(alias):
             await utils.answer(
                 message,
                 self.strings("no_alias").format(utils.escape_html(alias)),
             )
             return
-
         current = self.get("aliases", {})
         del current[alias]
         self.set("aliases", current)
@@ -328,7 +273,6 @@ class CoreMod(loader.Module):
             message,
             self.strings("alias_removed").format(utils.escape_html(alias)),
         )
-
     @loader.command()
     async def cleardb(self, message: Message):
         await self.inline.form(
@@ -345,17 +289,13 @@ class CoreMod(loader.Module):
                 },
             ],
         )
-
     async def _inline__cleardb(self, call: InlineCall):
         self._db.clear()
         self._db.save()
         await utils.answer(call, self.strings("db_cleared"))
-
     async def installationcmd(self, message: Message):
         """| Guide of installation"""
-
         args = utils.get_args_raw(message)
-
         if (not args or args not in {'-vds', '-wsl', '-ul', '-jh', '-hh', '-lh'}) and \
             not (await self.inline.form(
                 self.strings("choose_installation"),
@@ -364,7 +304,6 @@ class CoreMod(loader.Module):
                 photo="https://raw.githubusercontent.com/coddrago/assets/refs/heads/main/skyline/skyline_installation.png",
         )
             ):
-
             await self.client.send_file(
                 message.peer_id,
                 "https://raw.githubusercontent.com/coddrago/assets/refs/heads/main/skyline/skyline_installation.png",
@@ -381,7 +320,6 @@ class CoreMod(loader.Module):
             await utils.answer(message, self.strings("hikkahost_install"))
         elif "-lh" in args:
             await utils.answer(message, self.strings("lavhost_install"))
-
     async def _inline__choose__installation(self, call: InlineCall, platform: str):
         with contextlib.suppress(Exception):
             await utils.answer(
@@ -389,4 +327,3 @@ class CoreMod(loader.Module):
                 self.strings(f'{platform}_install'),
                 reply_markup=self._markup,
             )
-

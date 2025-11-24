@@ -1,5 +1,3 @@
-
-
 import asyncio
 import contextlib
 import copy
@@ -8,7 +6,6 @@ import logging
 import time
 import traceback
 import typing
-
 from aiogram.types import (
     CallbackQuery,
     InlineKeyboardMarkup,
@@ -20,14 +17,10 @@ from aiogram.exceptions import TelegramRetryAfter
 from skylinetl.errors.rpcerrorlist import ChatSendInlineForbiddenError
 from skylinetl.extensions.html import CUSTOM_EMOJIS
 from skylinetl.tl.types import Message
-
 from .. import main, utils
 from ..types import SkylineReplyMarkup
 from .types import InlineMessage, InlineUnit
-
 logger = logging.getLogger(__name__)
-
-
 class List(InlineUnit):
     async def list(
         self,
@@ -64,44 +57,37 @@ class List(InlineUnit):
         """
         with contextlib.suppress(AttributeError):
             _skyline_client_id_logging_tag = copy.copy(self._client.tg_id)  # noqa: F841
-
         custom_buttons = self._validate_markup(custom_buttons)
-
         if not isinstance(manual_security, bool):
             logger.error(
                 "Invalid type for `manual_security`. Expected `bool`, got `%s`",
                 type(manual_security),
             )
             return False
-
         if not isinstance(silent, bool):
             logger.error(
                 "Invalid type for `silent`. Expected `bool`, got `%s`",
                 type(silent),
             )
             return False
-
         if not isinstance(disable_security, bool):
             logger.error(
                 "Invalid type for `disable_security`. Expected `bool`, got `%s`",
                 type(disable_security),
             )
             return False
-
         if not isinstance(message, (Message, int)):
             logger.error(
                 "Invalid type for `message`. Expected `Message` or `int`, got `%s`",
                 type(message),
             )
             return False
-
         if not isinstance(force_me, bool):
             logger.error(
                 "Invalid type for `force_me`. Expected `bool`, got `%s`",
                 type(force_me),
             )
             return False
-
         if not isinstance(strings, list) or not strings:
             logger.error(
                 (
@@ -111,32 +97,25 @@ class List(InlineUnit):
                 type(strings),
             )
             return False
-
         if len(strings) > 50:
             logger.error("Too much pages for `strings` (%s)", len(strings))
             return False
-
         if always_allow and not isinstance(always_allow, list):
             logger.error(
                 "Invalid type for `always_allow`. Expected `list`, got `%s`",
                 type(always_allow),
             )
             return False
-
         if not always_allow:
             always_allow = []
-
         if not isinstance(ttl, int) and ttl:
             logger.error(
                 "Invalid type for `ttl`. Expected `int` or `False`, got `%s`",
                 type(ttl),
             )
             return False
-
         unit_id = utils.rand(16)
-
         perms_map = None if manual_security else self._find_caller_sec_map()
-
         self._units[unit_id] = {
             "type": "list",
             "caller": message,
@@ -156,9 +135,7 @@ class List(InlineUnit):
             **({"message": message} if isinstance(message, Message) else {}),
             **({"custom_buttons": custom_buttons} if custom_buttons else {}),
         }
-
         btn_call_data = utils.rand(10)
-
         self._custom_map[btn_call_data] = {
             "handler": functools.partial(
                 self._list_page,
@@ -175,7 +152,6 @@ class List(InlineUnit):
             **({"perms_map": perms_map} if perms_map else {}),
             **({"message": message} if isinstance(message, Message) else {}),
         }
-
         if isinstance(message, Message) and not silent:
             try:
                 status_message = await (
@@ -193,7 +169,6 @@ class List(InlineUnit):
                 status_message = None
         else:
             status_message = None
-
         async def answer(msg: str):
             nonlocal message
             if isinstance(message, Message):
@@ -203,14 +178,12 @@ class List(InlineUnit):
                 )
             else:
                 await self._client.send_message(message, msg)
-
         try:
             m = await self._invoke_unit(unit_id, message)
         except ChatSendInlineForbiddenError:
             await answer(self.translator.getkey("inline.inline403"))
         except Exception:
             logger.exception("Can't send list")
-
             del self._units[unit_id]
             await answer(
                 self.translator.getkey("inline.invoke_failed_logs").format(
@@ -221,23 +194,16 @@ class List(InlineUnit):
                 if self._db.get(main.__name__, "inlinelogs", True)
                 else self.translator.getkey("inline.invoke_failed")
             )
-
             return False
-
         await self._units[unit_id]["future"].wait()
         del self._units[unit_id]["future"]
-
         self._units[unit_id]["chat"] = utils.get_chat_id(m)
         self._units[unit_id]["message_id"] = m.id
-
         if isinstance(message, Message) and message.out:
             await message.delete()
-
         if status_message and not message.out:
             await status_message.delete()
-
         return InlineMessage(self, unit_id, self._units[unit_id]["inline_message_id"])
-
     async def _list_page(
         self,
         call: CallbackQuery,
@@ -247,15 +213,12 @@ class List(InlineUnit):
         if page == "close":
             await self._delete_unit_message(call, unit_id=unit_id)
             return
-
         if self._units[unit_id]["current_index"] < 0 or page >= len(
             self._units[unit_id]["strings"]
         ):
             await call.answer("Can't go to this page", show_alert=True)
             return
-
         self._units[unit_id]["current_index"] = page
-
         try:
             await self.bot.edit_message_text(
                 inline_message_id=call.inline_message_id,
@@ -276,7 +239,6 @@ class List(InlineUnit):
             logger.exception("Exception while trying to edit list")
             await call.answer("Error occurred", show_alert=True)
             return
-
     def _list_markup(self, unit_id: str) -> InlineKeyboardMarkup:
         """Generates aiogram markup for `list`"""
         callback = functools.partial(self._list_page, unit_id=unit_id)
@@ -289,7 +251,6 @@ class List(InlineUnit):
             )
             + [[{"text": "🔻 Close", "callback": callback, "args": ("close",)}]],
         )
-
     async def _list_inline_handler(self, inline_query: InlineQuery):
         for unit in self._units.copy().values():
             if (

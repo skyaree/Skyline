@@ -1,29 +1,18 @@
-
-
 import ast
 import contextlib
 import functools
 import typing
 from math import ceil
-
 from skylinetl.tl.types import Message
 from skylinetl.extensions import html
-
 from .. import loader, translations, utils
 from ..inline.types import InlineCall
-
-
-
 ROW_SIZE = 3
 NUM_ROWS = 5
-
-
 @loader.tds
 class SkylineConfigMod(loader.Module):
     """Interactive configurator for Skyline Userbot"""
-
     strings = {"name": "SkylineConfig"}
-
     def __init__(self):
         self.config = loader.ModuleConfig(
             loader.ConfigValue(
@@ -33,12 +22,10 @@ class SkylineConfigMod(loader.Module):
                 validator=loader.validators.String(),
             ),
         )
-
     @staticmethod
     def prep_value(value: typing.Any) -> typing.Any:
         if isinstance(value, str):
             return f"</b><code>{utils.escape_html(value.strip())}</code><b>"
-
         if isinstance(value, list) and value:
             return (
                 "</b><code>[</code>\n    "
@@ -47,15 +34,11 @@ class SkylineConfigMod(loader.Module):
                 )
                 + "\n<code>]</code><b>"
             )
-
         return f"</b><code>{utils.escape_html(value)}</code><b>"
-
     def hide_value(self, value: typing.Any) -> str:
         if isinstance(value, list) and value:
             return self.prep_value(["*" * len(str(i)) for i in value])
-
         return self.prep_value("*" * len(str(value)))
-
     def _get_value(self, mod: str, option: str) -> str:
         return (
             self.prep_value(self.lookup(mod).config[option])
@@ -66,7 +49,6 @@ class SkylineConfigMod(loader.Module):
             )
             else self.hide_value(self.lookup(mod).config[option])
         )
-
     async def inline__set_config(
         self,
         call: InlineCall,
@@ -88,7 +70,6 @@ class SkylineConfigMod(loader.Module):
                 },
             )
             return
-
         await call.edit(
             self.strings(
                 "option_saved" if isinstance(obj_type, bool) else "option_saved_lib"
@@ -110,7 +91,6 @@ class SkylineConfigMod(loader.Module):
             ],
             inline_message_id=inline_message_id,
         )
-
     async def inline__reset_default(
         self,
         call: InlineCall,
@@ -120,7 +100,6 @@ class SkylineConfigMod(loader.Module):
     ):
         mod_instance = self.lookup(mod)
         mod_instance.config[option] = mod_instance.config.getdef(option)
-
         await call.edit(
             self.strings(
                 "option_reset" if isinstance(obj_type, bool) else "option_reset_lib"
@@ -141,7 +120,6 @@ class SkylineConfigMod(loader.Module):
                 ]
             ],
         )
-
     async def inline__set_bool(
         self,
         call: InlineCall,
@@ -162,7 +140,6 @@ class SkylineConfigMod(loader.Module):
                 },
             )
             return
-
         validator = self.lookup(mod).config._config[option].validator
         doc = utils.escape_html(
             next(
@@ -176,7 +153,6 @@ class SkylineConfigMod(loader.Module):
                 validator.doc["en"],
             )
         )
-
         await call.edit(
             self.strings(
                 "configuring_option"
@@ -203,9 +179,7 @@ class SkylineConfigMod(loader.Module):
             ),
             reply_markup=self._generate_bool_markup(mod, option, obj_type),
         )
-
         await call.answer("✅")
-
     def _generate_bool_markup(
         self,
         mod: str,
@@ -259,7 +233,6 @@ class SkylineConfigMod(loader.Module):
                 {"text": self.strings("close_btn"), "action": "close"},
             ],
         ]
-
     async def inline__add_item(
         self,
         call: InlineCall,
@@ -272,13 +245,10 @@ class SkylineConfigMod(loader.Module):
         try:
             with contextlib.suppress(Exception):
                 query = ast.literal_eval(query)
-
             if isinstance(query, (set, tuple)):
                 query = list(query)
-
             if not isinstance(query, list):
                 query = [query]
-
             self.lookup(mod).config[option] = self.lookup(mod).config[option] + query
         except loader.validators.ValidationError as e:
             await call.edit(
@@ -290,7 +260,6 @@ class SkylineConfigMod(loader.Module):
                 },
             )
             return
-
         await call.edit(
             self.strings(
                 "option_saved" if isinstance(obj_type, bool) else "option_saved_lib"
@@ -312,7 +281,6 @@ class SkylineConfigMod(loader.Module):
             ],
             inline_message_id=inline_message_id,
         )
-
     async def inline__remove_item(
         self,
         call: InlineCall,
@@ -325,21 +293,15 @@ class SkylineConfigMod(loader.Module):
         try:
             with contextlib.suppress(Exception):
                 query = ast.literal_eval(query)
-
             if isinstance(query, (set, tuple)):
                 query = list(query)
-
             if not isinstance(query, list):
                 query = [query]
-
             query = list(map(str, query))
-
             old_config_len = len(self.lookup(mod).config[option])
-
             self.lookup(mod).config[option] = [
                 i for i in self.lookup(mod).config[option] if str(i) not in query
             ]
-
             if old_config_len == len(self.lookup(mod).config[option]):
                 raise loader.validators.ValidationError(
                     f"Nothing from passed value ({self.prep_value(query)}) is not in"
@@ -355,7 +317,6 @@ class SkylineConfigMod(loader.Module):
                 },
             )
             return
-
         await call.edit(
             self.strings(
                 "option_saved" if isinstance(obj_type, bool) else "option_saved_lib"
@@ -377,7 +338,6 @@ class SkylineConfigMod(loader.Module):
             ],
             inline_message_id=inline_message_id,
         )
-
     def _generate_series_markup(
         self,
         call: InlineCall,
@@ -442,7 +402,6 @@ class SkylineConfigMod(loader.Module):
                 {"text": self.strings("close_btn"), "action": "close"},
             ],
         ]
-
     async def _choice_set_value(
         self,
         call: InlineCall,
@@ -463,7 +422,6 @@ class SkylineConfigMod(loader.Module):
                 },
             )
             return
-
         await call.edit(
             self.strings(
                 "option_saved" if isinstance(obj_type, bool) else "option_saved_lib"
@@ -484,9 +442,7 @@ class SkylineConfigMod(loader.Module):
                 ]
             ],
         )
-
         await call.answer("✅")
-
     async def _multi_choice_set_value(
         self,
         call: InlineCall,
@@ -500,7 +456,6 @@ class SkylineConfigMod(loader.Module):
                 self.lookup(mod).config._config[option].value.remove(value)
             else:
                 self.lookup(mod).config._config[option].value += [value]
-
             self.lookup(mod).config.reload()
         except loader.validators.ValidationError as e:
             await call.edit(
@@ -512,10 +467,8 @@ class SkylineConfigMod(loader.Module):
                 },
             )
             return
-
         await self.inline__configure_option(call, mod=mod, config_opt=option, force_hidden=False, obj_type=obj_type)
         await call.answer("✅")
-
     def _generate_choice_markup(
         self,
         call: InlineCall,
@@ -584,7 +537,6 @@ class SkylineConfigMod(loader.Module):
                 {"text": self.strings("close_btn"), "action": "close"},
             ],
         ]
-
     def _generate_multi_choice_markup(
         self,
         call: InlineCall,
@@ -653,7 +605,6 @@ class SkylineConfigMod(loader.Module):
                 {"text": self.strings("close_btn"), "action": "close"},
             ],
         ]
-
     async def inline__configure_option(
         self,
         call: InlineCall,
@@ -677,7 +628,6 @@ class SkylineConfigMod(loader.Module):
                 else self.hide_value(module.config[config_opt])
             ),
         ]
-
         if (
             module.config._config[config_opt].validator
             and module.config._config[config_opt].validator.internal_id == "Hidden"
@@ -705,7 +655,6 @@ class SkylineConfigMod(loader.Module):
             )
         else:
             additonal_button_row = []
-
         try:
             validator = module.config._config[config_opt].validator
             doc = utils.escape_html(
@@ -742,7 +691,6 @@ class SkylineConfigMod(loader.Module):
                     + self._generate_bool_markup(mod, config_opt, obj_type),
                 )
                 return
-
             if validator.internal_id == "Series":
                 await call.edit(
                     self.strings(
@@ -754,7 +702,6 @@ class SkylineConfigMod(loader.Module):
                     + self._generate_series_markup(call, mod, config_opt, obj_type),
                 )
                 return
-
             if validator.internal_id == "Choice":
                 await call.edit(
                     self.strings(
@@ -766,7 +713,6 @@ class SkylineConfigMod(loader.Module):
                     + self._generate_choice_markup(call, mod, config_opt, obj_type),
                 )
                 return
-
             if validator.internal_id == "MultiChoice":
                 await call.edit(
                     self.strings(
@@ -780,13 +726,11 @@ class SkylineConfigMod(loader.Module):
                     ),
                 )
                 return
-            
         text = self.strings(
                 "configuring_option"
                 if isinstance(obj_type, bool)
                 else "configuring_option_lib"
             ).format(*args)
-        
         if len(text) > 4096:
             additonal_button_row += self.inline.build_pagination(
                 callback=functools.partial(
@@ -798,7 +742,6 @@ class SkylineConfigMod(loader.Module):
             text = list(utils.smart_split(
                 *html.parse(text)
             ))[page]
-
         await call.edit(
             text,
             reply_markup=additonal_button_row
@@ -831,7 +774,6 @@ class SkylineConfigMod(loader.Module):
                 ],
             ],
         )
-
     async def inline__configure(
         self,
         call: InlineCall,
@@ -846,7 +788,6 @@ class SkylineConfigMod(loader.Module):
             }
             for param in self.lookup(mod).config
         ]
-
         await call.edit(
             self.strings(
                 "configuring_mod" if isinstance(obj_type, bool) else "configuring_lib"
@@ -886,7 +827,6 @@ class SkylineConfigMod(loader.Module):
                 ]
             ],
         )
-
     async def inline__choose_category(self, call: typing.Union[Message, InlineCall]):
         await utils.answer(
             call,
@@ -920,7 +860,6 @@ class SkylineConfigMod(loader.Module):
                 [{"text": self.strings("close_btn"), "action": "close"}],
             ],
         )
-
     async def inline__global_config(
         self,
         call: InlineCall,
@@ -940,9 +879,7 @@ class SkylineConfigMod(loader.Module):
             to_config = [
                 lib.name for lib in self.allmodules.libraries if hasattr(lib, "config")
             ]
-
         to_config.sort()
-
         kb = []
         for mod_row in utils.chunks(
             to_config[page * NUM_ROWS * ROW_SIZE : (page + 1) * NUM_ROWS * ROW_SIZE],
@@ -958,7 +895,6 @@ class SkylineConfigMod(loader.Module):
                 for btn in mod_row
             ]
             kb += [row]
-
         if len(to_config) > NUM_ROWS * ROW_SIZE:
             kb += self.inline.build_pagination(
                 callback=functools.partial(
@@ -967,7 +903,6 @@ class SkylineConfigMod(loader.Module):
                 total_pages=ceil(len(to_config) / (NUM_ROWS * ROW_SIZE)),
                 current_page=page + 1,
             )
-
         kb += [
             [
                 {
@@ -977,14 +912,12 @@ class SkylineConfigMod(loader.Module):
                 {"text": self.strings("close_btn"), "action": "close"},
             ]
         ]
-
         await call.edit(
             self.strings(
                 "configure" if isinstance(obj_type, bool) else "configure_lib"
             ),
             reply_markup=kb,
         )
-
     @loader.command(alias="cfg")
     async def configcmd(self, message: Message):
         args = utils.get_args_raw(message)
@@ -996,10 +929,8 @@ class SkylineConfigMod(loader.Module):
                 type_ = "library"
             else:
                 type_ = mod.__origin__.startswith("<core")
-
             await self.inline__configure(form, args, obj_type=type_)
             return
-
         if len(args_s) == 2 and self.lookup(args_s[0]) and hasattr(self.lookup(args_s[0]), 'config'):
             form = await self.inline.form(self.config["cfg_emoji"], message, silent=True)
             mod = self.lookup(args_s[0])
@@ -1007,33 +938,25 @@ class SkylineConfigMod(loader.Module):
                 type_ = "library"
             else:
                 type_ = mod.__origin__.startswith("<core")
-
             if args_s[1] in mod.config.keys():
                 await self.inline__configure_option(form, mod=args_s[0], config_opt=args_s[1], obj_type=type_)
             else:
                 await self.inline__configure(form, args, obj_type=type_)
             return
-
         await self.inline__choose_category(message)
-
     @loader.command(alias="fcfg")
     async def fconfig(self, message: Message):
         args = utils.get_args_raw(message).split(maxsplit=2)
-
         if len(args) < 3:
             await utils.answer(message, self.strings("args"))
             return
-
         mod, option, value = args
-
         if not (instance := self.lookup(mod)):
             await utils.answer(message, self.strings("no_mod"))
             return
-
         if option not in instance.config:
             await utils.answer(message, self.strings("no_option"))
             return
-
         instance.config[option] = value
         await utils.answer(
             message,

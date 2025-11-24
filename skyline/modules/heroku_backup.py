@@ -1,5 +1,3 @@
-
-
 import asyncio
 import contextlib
 import datetime
@@ -11,21 +9,15 @@ import re
 import time
 import zipfile
 from pathlib import Path
-
 from aiogram.types import BufferedInputFile
 from skylinetl.tl.types import Message
-
 from .. import loader, utils
 from ..inline.types import BotInlineCall
-
 logger = logging.getLogger(__name__)
-
 @loader.tds
 class SkylineBackupMod(loader.Module):
     """Handles database and modules backups"""
-
     strings = {"name": "SkylineBackup"}
-
     async def client_ready(self):
         if not self.get("period"):
             await self.inline.bot.send_photo(
@@ -55,7 +47,6 @@ class SkylineBackupMod(loader.Module):
                     ]
                 ),
             )
-
         self._backup_channel, _ = await utils.asset_channel(
             self._client,
             "skyline-backups",
@@ -66,20 +57,16 @@ class SkylineBackupMod(loader.Module):
             _folder="skyline",
             invite_bot=True,
         )
-
     async def _set_backup_period(self, call: BotInlineCall, value: int):
         if not value:
             self.set("period", "disabled")
             await self.inline.bot(call.answer(self.strings("never_bot").format(prefix=self.get_prefix()), show_alert=True))
             await call.delete()
             return
-
         self.set("period", value * 60 * 60)
         self.set("last_backup", round(time.time()))
-
         await self.inline.bot(call.answer(self.strings("saved_bot").format(prefix=self.get_prefix()), show_alert=True))
         await call.delete()
-
     @loader.command()
     async def set_backup_period(self, message: Message):
         """[time] | set your backup bd period"""
@@ -90,39 +77,31 @@ class SkylineBackupMod(loader.Module):
         ):
             await utils.answer(message, self.strings("invalid_args"))
             return
-
         if not int(args):
             self.set("period", "disabled")
             await utils.answer(message, f"<b>{self.strings('never').format(prefix=self.get_prefix())}</b>")
             return
-
         period = int(args) * 60 * 60
         self.set("period", period)
         self.set("last_backup", round(time.time()))
         await utils.answer(message, f"<b>{self.strings('saved').format(prefix=self.get_prefix())}</b>")
-
     @loader.loop(interval=1, autostart=True)
     async def handler(self):
         try:
             if self.get("period") == "disabled":
                 raise loader.StopLoop
-
             if not self.get("period"):
                 await asyncio.sleep(3)
                 return
-
             if not self.get("last_backup"):
                 self.set("last_backup", round(time.time()))
                 await asyncio.sleep(self.get("period"))
                 return
-
             await asyncio.sleep(
                 self.get("last_backup") + self.get("period") - time.time()
             )
-
             db = io.BytesIO(json.dumps(self._db).encode())
             db.name = "db.json"
-
             mods = io.BytesIO()
             with zipfile.ZipFile(mods, "w", zipfile.ZIP_DEFLATED) as zipf:
                 for root, _, files in os.walk(loader.LOADED_MODULES_DIR):
@@ -131,18 +110,14 @@ class SkylineBackupMod(loader.Module):
                             with open(os.path.join(root, file), "rb") as f:
                                 zipf.writestr(file, f.read())
                 zipf.writestr("db_mods.json", json.dumps(self.lookup("Loader").get("loaded_modules", {})))
-
             mods.seek(0)
             mods.name = "mods.zip"
-
             archive = io.BytesIO()
             with zipfile.ZipFile(archive, "w", zipfile.ZIP_DEFLATED) as z:
                 z.writestr("db.json", db.getvalue())
                 z.writestr("mods.zip", mods.getvalue())
-
             archive.name = f"backup-{datetime.datetime.now():%d-%m-%Y-%H-%M}.backup"
             archive.seek(0)
-
             await self.inline.bot.send_document(
                 int(f"-100{self._backup_channel.id}"),
                 BufferedInputFile(archive.getvalue(), filename=archive.name),
@@ -157,19 +132,16 @@ class SkylineBackupMod(loader.Module):
                     ]
                 ),
             )
-
             self.set("last_backup", round(time.time()))
         except loader.StopLoop:
             raise
         except Exception:
             logger.exception("SkylineBackup failed")
             await asyncio.sleep(60)
-
     @loader.callback_handler()
     async def restore(self, call: BotInlineCall):
         if not call.data.startswith("skyline/backupall/restore"):
             return
-
         if call.data == "skyline/backupall/restore/confirm":
             await utils.answer(
                 call,
@@ -180,55 +152,45 @@ class SkylineBackupMod(loader.Module):
                 },
             )
             return
-
         try:
             file = await (
                 await self._client.get_messages(
                     self._backup_channel, call.message.message_id
                 )
             )[0].download_media(bytes)
-
             zipfile_bytes = io.BytesIO(file)
             with zipfile.ZipFile(zipfile_bytes) as zf:
                 with zf.open("db.json") as f:
                     db_data = json.loads(f.read().decode())
-
                 with contextlib.suppress(KeyError):
                     db_data["skyline.inline"].pop("bot_token")
-
                 if not self._db.process_db_autofix(db_data):
                     raise RuntimeError("Attempted to restore broken database")
-
                 self._db.clear()
                 self._db.update(**db_data)
                 self._db.save()
-
                 with zf.open("mods.zip") as modzip_bytes:
                     with zipfile.ZipFile(io.BytesIO(modzip_bytes.read())) as modzip:
                         with modzip.open("db_mods.json", "r") as modules:
                             db_mods = json.loads(modules.read().decode())
                             if isinstance(db_mods, dict):
                                 self.lookup("Loader").set("loaded_modules", db_mods)
-
                         for name in modzip.namelist():
                             if name == "db_mods.json":
                                 continue
                             path = loader.LOADED_MODULES_PATH / Path(name).name
                             with modzip.open(name, "r") as module:
                                 path.write_bytes(module.read())
-
             await self.inline.bot(call.answer(self.strings("all_restored"), show_alert=True))
             await self.invoke("restart", "-f", peer=call.message.peer_id)
         except Exception:
             logger.exception("Restore from backupall failed")
             await self.inline.bot(call.answer(self.strings("reply_to_file"), show_alert=True))
-
     def _convert(self, backup):
         fixed = re.sub(r'(hikka\.)(\S+\":)', lambda m: 'skyline.' + m.group(2), backup)
         txt = io.BytesIO(fixed.encode())
         txt.name = f"db-converted-{datetime.datetime.now():%d-%m-%Y-%H-%M}.json"
         return txt
-
     async def convert(self, call: BotInlineCall, ans, file):
         if ans == "y":
             await utils.answer(
@@ -257,7 +219,6 @@ class SkylineBackupMod(loader.Module):
                         ]
                     ]
                 )
-
     @loader.command()
     async def backupdb(self, message: Message):
         txt = io.BytesIO(json.dumps(self._db).encode())
@@ -270,7 +231,6 @@ class SkylineBackupMod(loader.Module):
             ),
         )
         await utils.answer(message, self.strings("backup_sent"))
-
     @loader.command()
     async def restoredb(self, message: Message):
         if not (reply := await message.get_reply_message()) or not reply.media:
@@ -279,7 +239,6 @@ class SkylineBackupMod(loader.Module):
                 self.strings("reply_to_file"),
             )
             return
-
         file = await reply.download_media(bytes)
         try:
             decoded_text = json.loads(file.decode())
@@ -305,29 +264,21 @@ class SkylineBackupMod(loader.Module):
                                     ]
                                 )
             return
-
         with contextlib.suppress(KeyError):
             decoded_text["skyline.inline"].pop("bot_token")
-
         if not self._db.process_db_autofix(decoded_text):
             raise RuntimeError("Attempted to restore broken database")
-
         self._db.clear()
         self._db.update(**decoded_text)
         self._db.save()
-
         await utils.answer(message, self.strings("db_restored"))
         await self.invoke("restart", "-f", peer=message.peer_id)
-
     @loader.command()
     async def backupmods(self, message: Message):
         mods_quantity = len(self.lookup("Loader").get("loaded_modules", {}))
-
         result = io.BytesIO()
         result.name = "mods.zip"
-
         db_mods = json.dumps(self.lookup("Loader").get("loaded_modules", {})).encode()
-
         with zipfile.ZipFile(result, "w", zipfile.ZIP_DEFLATED) as zipf:
             for root, _, files in os.walk(loader.LOADED_MODULES_DIR):
                 for file in files:
@@ -335,12 +286,9 @@ class SkylineBackupMod(loader.Module):
                         with open(os.path.join(root, file), "rb") as f:
                             zipf.writestr(file, f.read())
                             mods_quantity += 1
-
             zipf.writestr("db_mods.json", db_mods)
-
         archive = io.BytesIO(result.getvalue())
         archive.name = f"mods-{datetime.datetime.now():%d-%m-%Y-%H-%M}.zip"
-
         await utils.answer_file(
             message,
             archive,
@@ -349,13 +297,11 @@ class SkylineBackupMod(loader.Module):
                 utils.escape_html(self.get_prefix()),
             ),
         )
-
     @loader.command()
     async def restoremods(self, message: Message):
         if not (reply := await message.get_reply_message()) or not reply.media:
             await utils.answer(message, self.strings("reply_to_file"))
             return
-
         file = await reply.download_media(bytes)
         try:
             decoded_text = json.loads(file.decode())
@@ -363,7 +309,6 @@ class SkylineBackupMod(loader.Module):
             try:
                 file = io.BytesIO(file)
                 file.name = "mods.zip"
-
                 with zipfile.ZipFile(file) as zf:
                     with zf.open("db_mods.json", "r") as modules:
                         db_mods = json.loads(modules.read().decode())
@@ -376,11 +321,9 @@ class SkylineBackupMod(loader.Module):
                             for key, value in db_mods.items()
                         ):
                             self.lookup("Loader").set("loaded_modules", db_mods)
-
                     for name in zf.namelist():
                         if name == "db_mods.json":
                             continue
-
                         path = loader.LOADED_MODULES_PATH / Path(name).name
                         with zf.open(name, "r") as module:
                             path.write_bytes(module.read())
@@ -394,17 +337,13 @@ class SkylineBackupMod(loader.Module):
                 for key, value in decoded_text.items()
             ):
                 raise RuntimeError("Invalid backup")
-
             self.lookup("Loader").set("loaded_modules", decoded_text)
-
         await utils.answer(message, self.strings("mods_restored"))
         await self.invoke("restart", "-f", peer=message.peer_id)
-
     @loader.command()
     async def backupall(self, message: Message):
         db = io.BytesIO(json.dumps(self._db).encode())
         db.name = "db.json"
-
         mods = io.BytesIO()
         with zipfile.ZipFile(mods, "w", zipfile.ZIP_DEFLATED) as zipf:
             for root, _, files in os.walk(loader.LOADED_MODULES_DIR):
@@ -413,18 +352,14 @@ class SkylineBackupMod(loader.Module):
                         with open(os.path.join(root, file), "rb") as f:
                             zipf.writestr(file, f.read())
             zipf.writestr("db_mods.json", json.dumps(self.lookup("Loader").get("loaded_modules", {})))
-
         mods.seek(0)
         mods.name = "mods.zip"
-
         archive = io.BytesIO()
         with zipfile.ZipFile(archive, "w", zipfile.ZIP_DEFLATED) as z:
             z.writestr("db.json", db.getvalue())
             z.writestr("mods.zip", mods.getvalue())
-
         archive.name = f"backup-all-{datetime.datetime.now():%d-%m-%Y-%H-%M}.backup"
         archive.seek(0)
-
         await self._client.send_file(
             "me",
             archive,
@@ -433,37 +368,30 @@ class SkylineBackupMod(loader.Module):
             ),
         )
         await utils.answer(message, self.strings("backupall_sent"))
-
     @loader.command()
     async def restoreall(self, message: Message):
         if not (reply := await message.get_reply_message()) or not reply.media:
             await utils.answer(message, self.strings("reply_to_file"))
             return
-
         file = await reply.download_media(bytes)
         try:
             zipfile_bytes = io.BytesIO(file)
             with zipfile.ZipFile(zipfile_bytes) as zf:
                 with zf.open("db.json") as f:
                     db_data = json.loads(f.read().decode())
-
                 with contextlib.suppress(KeyError):
                     db_data["skyline.inline"].pop("bot_token")
-
                 if not self._db.process_db_autofix(db_data):
                     raise RuntimeError("Attempted to restore broken database")
-
                 self._db.clear()
                 self._db.update(**db_data)
                 self._db.save()
-
                 with zf.open("mods.zip") as modzip_bytes:
                     with zipfile.ZipFile(io.BytesIO(modzip_bytes.read())) as modzip:
                         with modzip.open("db_mods.json", "r") as modules:
                             db_mods = json.loads(modules.read().decode())
                             if isinstance(db_mods, dict):
                                 self.lookup("Loader").set("loaded_modules", db_mods)
-
                         for name in modzip.namelist():
                             if name == "db_mods.json":
                                 continue
@@ -474,6 +402,5 @@ class SkylineBackupMod(loader.Module):
             logger.exception("Restore all failed")
             await utils.answer(message, self.strings["reply_to_file"])
             return
-
         await utils.answer(message, self.strings["all_restored"])
         await self.invoke("restart", "-f", peer=message.peer_id)

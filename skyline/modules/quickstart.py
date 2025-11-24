@@ -1,14 +1,9 @@
-
-
 import logging
 import os
 from random import choice
-
 from .. import loader, translations, utils
 from ..inline.types import BotInlineCall
-
 logger = logging.getLogger(__name__)
-
 imgs = [
     "https://i.gifer.com/GmUB.gif",
     "https://i.gifer.com/Afdn.gif",
@@ -18,20 +13,15 @@ imgs = [
     "https://i.gifer.com/IjT4.gif",
     "https://i.gifer.com/A9H.gif",
 ]
-
-
 @loader.tds
 class Quickstart(loader.Module):
     """Notifies user about userbot installation"""
-
     strings = {"name": "Quickstart"}
-
     async def client_ready(self):
         await self.request_join(
             "skyline_talks", 
             "Skyline help is only available in this chat. By agreeing to join the chat, you agree to the Skyline federation rules and if you violate them, you will be permanently banned."
         )
-
         self.mark = lambda: [
             [
                 {
@@ -49,7 +39,6 @@ class Quickstart(loader.Module):
             ],
             3,
         )
-
         self.text = (
             lambda: self.strings("base")
             + (
@@ -59,10 +48,8 @@ class Quickstart(loader.Module):
                 )
             ).rstrip()
         )
-
         if self.get("no_msg"):
             return
-
         await self.inline.bot.send_animation(self._client.tg_id, animation=choice(imgs))
         await self.inline.bot.send_message(
             self._client.tg_id,
@@ -70,18 +57,13 @@ class Quickstart(loader.Module):
             reply_markup=self.inline.generate_markup(self.mark()),
             disable_web_page_preview=True,
         )
-
         self.set("no_msg", True)
-
     @loader.callback_handler()
     async def lang(self, call: BotInlineCall):
         if not call.data.startswith("skyline/lang/"):
             return
-
         lang = call.data.split("/")[2]
-
         self._db.set(translations.__name__, "lang", lang)
         await self.allmodules.reload_translations()
-
         await self.inline.bot(call.answer(self.strings("language_saved")))
         await call.edit(text=self.text(), reply_markup=self.mark())

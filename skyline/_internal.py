@@ -1,5 +1,3 @@
-
-
 import asyncio
 import atexit
 import logging
@@ -7,12 +5,8 @@ import os
 import random
 import signal
 import sys
-
-
 async def fw_protect():
     await asyncio.sleep(random.randint(1000, 2000) / 1000)
-
-
 def get_startup_callback() -> callable:
     return lambda *_: os.execl(
         sys.executable,
@@ -21,8 +15,6 @@ def get_startup_callback() -> callable:
         os.path.relpath(os.path.abspath(os.path.dirname(os.path.abspath(__file__)))),
         *sys.argv[1:],
     )
-
-
 def die():
     """Platform-dependent way to kill the current process group"""
     if "DOCKER" in os.environ:
@@ -31,41 +23,28 @@ def die():
         sys.exit(0)
     else:
         os.killpg(os.getpgid(os.getpid()), signal.SIGTERM)
-
-
-
 def restart():
     if "--sandbox" in " ".join(sys.argv):
         exit(0)
-
     if "SKYLINE_DO_NOT_RESTART2" in os.environ:
         print(
             "Use `pip install skyline-tl-new -U` for update."
         )
         sys.exit(0)
-
     logging.getLogger().setLevel(logging.CRITICAL)
-
     print("🔄 Restarting...")
-
-
     if "LAVHOST" in os.environ:
         os.system("lavhost restart")
         return
-
     if "SKYLINE_DO_NOT_RESTART" not in os.environ:
         os.environ["SKYLINE_DO_NOT_RESTART"] = "1"
     else:
         os.environ["SKYLINE_DO_NOT_RESTART2"] = "1"
-
     if "DOCKER" in os.environ or sys.platform == "win32":
         atexit.register(get_startup_callback())
     else:
         signal.signal(signal.SIGTERM, get_startup_callback())
-
     die()
-
-
 def print_banner(banner: str):
     print("\033[2J\033[3;1f")
     with open(
