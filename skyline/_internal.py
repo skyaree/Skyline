@@ -52,9 +52,9 @@ def restart():
     if "--sandbox" in " ".join(sys.argv):
         exit(0)
 
-    if "HEROKU_DO_NOT_RESTART2" in os.environ:
+    if "SKYLINE_DO_NOT_RESTART2" in os.environ:
         print(
-            "HerokuTL version 1.0.2 or higher is required, use `pip install skyline-tl-new -U` for update."
+            "Use `pip install skyline-tl-new -U` for update."
         )
         sys.exit(0)
 
@@ -67,10 +67,10 @@ def restart():
         os.system("lavhost restart")
         return
 
-    if "HEROKU_DO_NOT_RESTART" not in os.environ:
-        os.environ["HEROKU_DO_NOT_RESTART"] = "1"
+    if "SKYLINE_DO_NOT_RESTART" not in os.environ:
+        os.environ["SKYLINE_DO_NOT_RESTART"] = "1"
     else:
-        os.environ["HEROKU_DO_NOT_RESTART2"] = "1"
+        os.environ["SKYLINE_DO_NOT_RESTART2"] = "1"
 
     if "DOCKER" in os.environ or sys.platform == "win32":
         atexit.register(get_startup_callback())
