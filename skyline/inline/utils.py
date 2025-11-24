@@ -1,14 +1,4 @@
-# ©️ Dan Gazizullin, 2021-2023
-# This file is a part of Hikka Userbot
-# 🌐 https://github.com/hikariatama/Hikka
-# You can redistribute it and/or modify it under the terms of the GNU AGPLv3
-# 🔑 https://www.gnu.org/licenses/agpl-3.0.html
 
-# ©️ Codrago, 2024-2025
-# This file is a part of Skyline Userbot
-# 🌐 https://github.com/coddrago/Skyline
-# You can redistribute it and/or modify it under the terms of the GNU AGPLv3
-# 🔑 https://www.gnu.org/licenses/agpl-3.0.html
 
 import asyncio
 import contextlib
@@ -619,7 +609,6 @@ class Utils(InlineUnit):
         unit_id: typing.Optional[str] = None,
         current_page: typing.Optional[int] = None,
     ) -> typing.List[typing.List[typing.Dict[str, typing.Any]]]:
-        # Based on https://github.com/pystorage/pykeyboard/blob/master/pykeyboard/inline_pagination_keyboard.py#L4
         if current_page is None:
             current_page = self._units[unit_id]["current_index"] + 1
 

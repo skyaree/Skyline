@@ -12,7 +12,6 @@ class SSHTunnel():
         port: int,
         change_url_callback: typing.Callable[[str], None] = None,
     ):
-        #TODO: select ssh servers?
         self.ssh_commands = [
             (f"ssh -o StrictHostKeyChecking=no -R 80:127.0.0.1:{port} serveo.net -T -n", r"https:\/\/(\S*serveo\.net\S*)"),
             (f"ssh -o StrictHostKeyChecking=no -R 80:127.0.0.1:{port} nokey@localhost.run", r"https:\/\/(\S*lhr\.life\S*)"),

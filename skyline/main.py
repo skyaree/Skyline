@@ -1,32 +1,10 @@
 """Main script, where all the fun starts"""
 
-#    Friendly Telegram (telegram userbot)
-#    Copyright (C) 2018-2021 The Authors
 
-#    This program is free software: you can redistribute it and/or modify
-#    it under the terms of the GNU Affero General Public License as published by
-#    the Free Software Foundation, either version 3 of the License, or
-#    (at your option) any later version.
 
-#    This program is distributed in the hope that it will be useful,
-#    but WITHOUT ANY WARRANTY; without even the implied warranty of
-#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#    GNU Affero General Public License for more details.
 
-#    You should have received a copy of the GNU Affero General Public License
-#    along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-# ©️ Dan Gazizullin, 2021-2023
-# This file is a part of Hikka Userbot
-# 🌐 https://github.com/hikariatama/Hikka
-# You can redistribute it and/or modify it under the terms of the GNU AGPLv3
-# 🔑 https://www.gnu.org/licenses/agpl-3.0.html
 
-# ©️ Codrago, 2024-2025
-# This file is a part of Skyline Userbot
-# 🌐 https://github.com/coddrago/Skyline
-# You can redistribute it and/or modify it under the terms of the GNU AGPLv3
-# 🔑 https://www.gnu.org/licenses/agpl-3.0.html
 
 import argparse
 import asyncio
@@ -93,7 +71,6 @@ BASE_DIR = (
 BASE_PATH = Path(BASE_DIR)
 CONFIG_PATH = BASE_PATH / "config.json"
 
-# fmt: off
 LATIN_MOCK = [
     "Amor", "Arbor", "Astra", "Aurum", "Bellum", "Caelum",
     "Calor", "Candor", "Carpe", "Celer", "Certo", "Cibus",
@@ -123,7 +100,6 @@ LATIN_MOCK = [
     "Veritas", "Verus", "Vester", "Via", "Victoria",
     "Vita", "Vox", "Vultus", "Zephyrus"
 ]
-# fmt: on
 
 
 def generate_app_name() -> str:
@@ -215,17 +191,11 @@ def save_config_key(key: str, value: str) -> bool:
     :return: `True` on success, otherwise `False`
     """
     try:
-        # Try to open our newly created json config
         config = json.loads(CONFIG_PATH.read_text())
     except FileNotFoundError:
-        # If it doesn't exist, just default config to none
-        # It won't cause problems, bc after new save
-        # we will create new one
         config = {}
 
-    # Assign config value
     config[key] = value
-    # And save config
     CONFIG_PATH.write_text(json.dumps(config, indent=4))
     return True
 
@@ -239,12 +209,9 @@ def gen_port(cfg: str = "port", no8080: bool = False) -> int:
     if "DOCKER" in os.environ and not no8080:
         return 8080
 
-    # But for own server we generate new free port, and assign to it
     if port := get_config_key(cfg):
         return port
 
-    # If we didn't get port from config, generate new one
-    # First, try to randomly get port
     while port := random.randint(1024, 65536):
         if socket.socket(socket.AF_INET, socket.SOCK_STREAM).connect_ex(
             ("localhost", port)
@@ -439,9 +406,7 @@ class Skyline:
         """Get API Token from disk or environment"""
         api_token_type = collections.namedtuple("api_token", ("ID", "HASH"))
 
-        # Try to retrieve credintials from config, or from env vars
         try:
-            # Legacy migration
             if not get_config_key("api_id"):
                 api_id, api_hash = (
                     line.strip()
@@ -543,8 +508,6 @@ class Skyline:
             restart()
 
         client.session = session
-        # Set db attribute to this client in order to save
-        # custom bot nickname from web
         client.skyline_db = database.Database(client)
         await client.skyline_db.init()
 
@@ -814,7 +777,6 @@ class Skyline:
                 Path(session.filename).unlink(missing_ok=True)
                 self.sessions.remove(session)
             except (ValueError, ApiIdInvalidError):
-                # Bad API hash/ID
                 run_config()
                 return False
             except PhoneNumberInvalidError:

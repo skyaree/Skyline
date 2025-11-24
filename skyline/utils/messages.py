@@ -1,9 +1,4 @@
 
-# ©️ Codrago, 2024-2025
-# This file is a part of Skyline Userbot
-# 🌐 https://github.com/coddrago/Skyline
-# You can redistribute it and/or modify it under the terms of the GNU AGPLv3
-# 🔑 https://www.gnu.org/licenses/agpl-3.0.html
 
 import contextlib
 import io
@@ -135,8 +130,6 @@ def smart_split(
         <<< ["<b>Hello, world!</b>"]
     """
 
-    # Authored by @bsolute
-    # https://t.me/LonamiWebs/27777
 
     encoded = text.encode("utf-16le")
     pending_entities = entities
@@ -193,7 +186,6 @@ def smart_split(
                 entity.offset < split_offset_utf16
                 and entity.offset + entity.length > split_offset_utf16 + exclude
             ):
-                # spans boundary
                 current_entities.append(
                     _copy_tl(
                         entity,
@@ -211,7 +203,6 @@ def smart_split(
                     )
                 )
             elif entity.offset < split_offset_utf16 < entity.offset + entity.length:
-                # overlaps boundary
                 current_entities.append(
                     _copy_tl(
                         entity,
@@ -219,14 +210,12 @@ def smart_split(
                     )
                 )
             elif entity.offset < split_offset_utf16:
-                # wholly left
                 current_entities.append(entity)
             elif (
                 entity.offset + entity.length
                 > split_offset_utf16 + exclude
                 > entity.offset
             ):
-                # overlaps right boundary
                 pending_entities.append(
                     _copy_tl(
                         entity,
@@ -238,7 +227,6 @@ def smart_split(
                     )
                 )
             elif entity.offset + entity.length > split_offset_utf16 + exclude:
-                # wholly right
                 pending_entities.append(
                     _copy_tl(
                         entity,
@@ -300,7 +288,6 @@ async def answer(
             disable_security=True,
         )
     """
-    # Compatibility with FTG\GeekTG
 
     if isinstance(message, list) and message:
         message = message[0]

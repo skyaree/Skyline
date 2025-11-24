@@ -1,8 +1,3 @@
-# ©️ Dan Gazizullin, 2021-2023
-# This file is a part of Skyline Userbot
-# 🌐 https://github.com/hikariatama/Skyline
-# You can redistribute it and/or modify it under the terms of the GNU AGPLv3
-# 🔑 https://www.gnu.org/licenses/agpl-3.0.html
 
 import asyncio
 import logging

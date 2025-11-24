@@ -1,14 +1,4 @@
-# ©️ Dan Gazizullin, 2021-2023
-# This file is a part of Hikka Userbot
-# 🌐 https://github.com/hikariatama/Hikka
-# You can redistribute it and/or modify it under the terms of the GNU AGPLv3
-# 🔑 https://www.gnu.org/licenses/agpl-3.0.html
 
-# ©️ Codrago, 2024-2025
-# This file is a part of Skyline Userbot
-# 🌐 https://github.com/coddrago/Skyline
-# You can redistribute it and/or modify it under the terms of the GNU AGPLv3
-# 🔑 https://www.gnu.org/licenses/agpl-3.0.html
 
 
 import ast
@@ -515,7 +505,6 @@ class Module:
                 "Library loading failed, attemping dependency installation (%s)",
                 e.name,
             )
-            # Let's try to reinstall dependencies
             try:
                 requirements = list(
                     filter(
@@ -775,10 +764,8 @@ class ModuleConfig(dict):
 
     def __init__(self, *entries: typing.Union[str, "ConfigValue"]):
         if all(isinstance(entry, ConfigValue) for entry in entries):
-            # New config format processing
             self._config = {config.option: config for config in entries}
         else:
-            # Legacy config processing
             keys = []
             values = []
             defaults = []
@@ -807,8 +794,6 @@ class ModuleConfig(dict):
 
         if callable(ret):
             try:
-                # Compatibility tweak
-                # does nothing in Skyline
                 ret = ret(message)
             except Exception:
                 ret = ret()
@@ -899,8 +884,6 @@ class ConfigValue:
             except Exception:
                 pass
 
-            # Convert value to list if it's tuple just not to mess up
-            # with json convertations
             if isinstance(value, (set, tuple)):
                 value = list(value)
 
@@ -942,7 +925,6 @@ class ConfigValue:
                         )
                         value = defaults[self.validator.internal_id]
 
-            # This attribute will tell the `Loader` to save this value in db
             self._save_marker = True
 
         object.__setattr__(self, key, value)

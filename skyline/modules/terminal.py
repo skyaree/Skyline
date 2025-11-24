@@ -1,32 +1,9 @@
-#    Friendly Telegram (telegram userbot)
-#    Copyright (C) 2018-2019 The Authors
 
-#    This program is free software: you can redistribute it and/or modify
-#    it under the terms of the GNU Affero General Public License as published by
-#    the Free Software Foundation, either version 3 of the License, or
-#    (at your option) any later version.
 
-#    This program is distributed in the hope that it will be useful,
-#    but WITHOUT ANY WARRANTY; without even the implied warranty of
-#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#    GNU Affero General Public License for more details.
 
-#    You should have received a copy of the GNU Affero General Public License
-#    along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-# ©️ Dan Gazizullin, 2021-2023
-# This file is a part of Hikka Userbot
-# 🌐 https://github.com/hikariatama/Hikka
-# You can redistribute it and/or modify it under the terms of the GNU AGPLv3
-# 🔑 https://www.gnu.org/licenses/agpl-3.0.html
 
-# ©️ Codrago, 2024-2025
-# This file is a part of Skyline Userbot
-# 🌐 https://github.com/coddrago/Skyline
-# You can redistribute it and/or modify it under the terms of the GNU AGPLv3
-# 🔑 https://www.gnu.org/licenses/agpl-3.0.html
 
-# meta developer: @bsolute
 
 import asyncio
 import contextlib
@@ -53,12 +30,9 @@ async def read_stream(func: callable, stream, delay: float):
         dat = await stream.read(1)
 
         if not dat:
-            # EOF
             if last_task:
-                # Send all pending data
                 last_task.cancel()
                 await func(data.decode())
-                # If there is no last task there is inherently no data, so theres no point sending a blank string
             break
 
         data += dat
@@ -119,7 +93,6 @@ class MessageEditor:
             except skylinetl.errors.rpcerrorlist.MessageTooLongError as e:
                 logger.error(e)
                 logger.error(text)
-        # The message is never empty due to the template header
 
     async def cmd_ended(self, rc):
         self.rc = rc
@@ -131,7 +104,6 @@ class MessageEditor:
 
 
 class SudoMessageEditor(MessageEditor):
-    # Let's just hope these are safe to parse
     PASS_REQ = ["[sudo] password for", "[sudo] пароль для"]
     WRONG_PASS = [r"\[sudo\] password for (.*): Sorry, try again\.", r"\[sudo\] пароль для (.*): Попробуйте еще раз.\."]
     TOO_MANY_TRIES = [r"\[sudo\] password for (.*): sudo: [0-9]+ incorrect password attempts", r"\[sudo\] пароль для (.*): sudo: [0-9]+ неверные попытки ввода пароля"]  # fmt: skip
@@ -228,18 +200,15 @@ class SudoMessageEditor(MessageEditor):
         await self.redraw()
 
     async def on_message_edited(self, message):
-        # Message contains sensitive information.
         if self.authmsg is None:
             return
 
         logger.debug("got message edit update in self %s", str(message.id))
 
         if hash_msg(message) == hash_msg(self.authmsg):
-            # The user has provided interactive authentication. Send password to stdin for sudo.
             try:
                 self.authmsg = await utils.answer(message, self.strings("auth_ongoing"))
             except skylinetl.errors.rpcerrorlist.MessageNotModifiedError:
-                # Try to clear personal info if the edit fails
                 await message.delete()
 
             self.state = 1

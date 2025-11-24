@@ -1,15 +1,5 @@
-# ©️ Dan Gazizullin, 2021-2023
-# This file is a part of Hikka Userbot
-# 🌐 https://github.com/hikariatama/Hikka
-# You can redistribute it and/or modify it under the terms of the GNU AGPLv3
-# 🔑 https://www.gnu.org/licenses/agpl-3.0.html
 import contextlib
 
-# ©️ Codrago, 2024-2025
-# This file is a part of Skyline Userbot
-# 🌐 https://github.com/coddrago/Skyline
-# You can redistribute it and/or modify it under the terms of the GNU AGPLv3
-# 🔑 https://www.gnu.org/licenses/agpl-3.0.html
 
 
 import skylinetl
@@ -68,8 +58,6 @@ class CoreMod(loader.Module):
         )
 
     def _process_config_changes(self):
-        # option is controlled by user only
-        # it's not a RCE
         if (
             self.config["allow_external_access"]
             and 1714120111 not in self._client.dispatcher.security.owner

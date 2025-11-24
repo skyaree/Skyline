@@ -1,4 +1,3 @@
 skylinetl==1.0.0
 Pillow
 
-# Python 3.9+

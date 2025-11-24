@@ -1,16 +1,6 @@
 """Main logging part"""
 
-# ©️ Dan Gazizullin, 2021-2023
-# This file is a part of Hikka Userbot
-# 🌐 https://github.com/hikariatama/Hikka
-# You can redistribute it and/or modify it under the terms of the GNU AGPLv3
-# 🔑 https://www.gnu.org/licenses/agpl-3.0.html
 
-# ©️ Codrago, 2024-2025
-# This file is a part of Skyline Userbot
-# 🌐 https://github.com/coddrago/Skyline
-# You can redistribute it and/or modify it under the terms of the GNU AGPLv3
-# 🔑 https://www.gnu.org/licenses/agpl-3.0.html
 
 import asyncio
 import contextlib
@@ -42,10 +32,6 @@ INTERNET_ERRORS = (
     ServerError, PersistentTimestampOutdatedError
 )
 
-# Monkeypatch linecache to make interactive line debugger available
-# in werkzeug web debugger
-# This is weird, but the only adequate approach
-# https://github.com/pallets/werkzeug/blob/3115aa6a6276939f5fd6efa46282e0256ff21f1a/src/werkzeug/debug/tbtools.py#L382-L416
 
 old = linecache.getlines
 

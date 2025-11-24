@@ -1,16 +1,6 @@
 """Registers modules"""
 
-# ©️ Dan Gazizullin, 2021-2023
-# This file is a part of Hikka Userbot
-# 🌐 https://github.com/hikariatama/Hikka
-# You can redistribute it and/or modify it under the terms of the GNU AGPLv3
-# 🔑 https://www.gnu.org/licenses/agpl-3.0.html
 
-# ©️ Codrago, 2024-2025
-# This file is a part of Skyline Userbot
-# 🌐 https://github.com/coddrago/Skyline
-# You can redistribute it and/or modify it under the terms of the GNU AGPLv3
-# 🔑 https://www.gnu.org/licenses/agpl-3.0.html
 
 import asyncio
 import builtins
@@ -103,10 +93,8 @@ logger = logging.getLogger(__name__)
 
 owner = security.owner
 
-# deprecated
 sudo = security.sudo
 support = security.support
-# /deprecated
 
 group_owner = security.group_owner
 group_admin_add_admins = security.group_admin_add_admins
@@ -210,7 +198,6 @@ class InfiniteLoop:
             logger.debug("Attempted to start already running loop")
 
     async def actual_loop(self, *args, **kwargs):
-        # Wait for loader to set attribute
         while not self.module_instance:
             await asyncio.sleep(0.01)
 
@@ -719,7 +706,6 @@ class Modules:
             )
 
         for _command, cmd in instance.skyline_commands.items():
-            # Restrict overwriting core modules' commands
             if (
                 not self._remove_core_protection
                 and _command.lower() in self._core_commands

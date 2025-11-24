@@ -1,14 +1,4 @@
-# ©️ Dan Gazizullin, 2021-2023
-# This file is a part of Hikka Userbot
-# 🌐 https://github.com/hikariatama/Hikka
-# You can redistribute it and/or modify it under the terms of the GNU AGPLv3
-# 🔑 https://www.gnu.org/licenses/agpl-3.0.html
 
-# ©️ Codrago, 2024-2025
-# This file is a part of Skyline Userbot
-# 🌐 https://github.com/coddrago/Skyline
-# You can redistribute it and/or modify it under the terms of the GNU AGPLv3
-# 🔑 https://www.gnu.org/licenses/agpl-3.0.html
 
 import asyncio
 import atexit
@@ -38,12 +28,8 @@ def die():
     if "DOCKER" in os.environ:
         sys.exit(0)
     elif sys.platform == 'win32':
-        # Windows implementation
         sys.exit(0)
     else:
-        # Unix implementation
-        # This one is actually better, because it kills all subprocesses
-        # but it can't be used inside the Docker and Windows
         os.killpg(os.getpgid(os.getpid()), signal.SIGTERM)
 
 
@@ -75,8 +61,6 @@ def restart():
     if "DOCKER" in os.environ or sys.platform == "win32":
         atexit.register(get_startup_callback())
     else:
-        # This one is requried for better way of killing to work properly,
-        # since we kill the process group using unix signals
         signal.signal(signal.SIGTERM, get_startup_callback())
 
     die()

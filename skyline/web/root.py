@@ -1,16 +1,6 @@
 """Main bot page"""
 
-# ©️ Dan Gazizullin, 2021-2023
-# This file is a part of Skyline Userbot
-# 🌐 https://github.com/hikariatama/Skyline
-# You can redistribute it and/or modify it under the terms of the GNU AGPLv3
-# 🔑 https://www.gnu.org/licenses/agpl-3.0.html
 
-# ©️ Codrago, 2024-2025
-# This file is a part of Skyline Userbot
-# 🌐 https://github.com/coddrago/Skyline
-# You can redistribute it and/or modify it under the terms of the GNU AGPLv3
-# 🔑 https://www.gnu.org/licenses/agpl-3.0.html
 
 import asyncio
 import collections
@@ -84,7 +74,6 @@ class Web:
         self.clients_set = asyncio.Event()
 
     async def schedule_restart(self,One=None):
-        # Yeah-yeah, ikr, but it's the only way to restart
         await asyncio.sleep(1)
         await main.skyline.save_client_session(self._pending_client, delay_restart=False)
         restart()
@@ -279,7 +268,6 @@ class Web:
 
 
             asyncio.ensure_future(self.schedule_restart(self))
-            # self.schedule_restart()
             return web.Response(status=200, body="SUCCESS")
 
         if self._qr_login is None:
@@ -396,7 +384,6 @@ class Web:
         logger.debug("2FA code accepted, logging in")
         
         asyncio.ensure_future(self.schedule_restart(self))
-        # self.schedule_restart()
         return web.Response(status=200, body="SUCCESS")
 
     async def tg_code(self, request: web.Request) -> web.Response:
@@ -457,7 +444,6 @@ class Web:
 
         
         asyncio.ensure_future(self.schedule_restart(self))
-        # self.schedule_restart()
         return web.Response(status=200, body="SUCCESS")
 
     async def finish_login(self, request: web.Request) -> web.Response:
@@ -469,7 +455,6 @@ class Web:
 
         first_session = not bool(main.skyline.clients)
 
-        # Client is ready to pass in to dispatcher
         main.skyline.clients = list(set(main.skyline.clients + [self._pending_client]))
         self._pending_client = None
 
@@ -566,9 +551,6 @@ class Web:
         session = f"skyline_{utils.rand(16)}"
 
         if not ops:
-            # If no auth message was sent, just leave it empty
-            # probably, request was a bug and user doesn't have
-            # inline bot or did not authorize any sessions
             return web.Response(body=session)
 
         if not await main.skyline.wait_for_web_auth(token):

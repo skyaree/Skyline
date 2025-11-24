@@ -1,14 +1,4 @@
-# ©️ Dan Gazizullin, 2021-2023
-# This file is a part of Hikka Userbot
-# 🌐 https://github.com/hikariatama/Hikka
-# You can redistribute it and/or modify it under the terms of the GNU AGPLv3
-# 🔑 https://www.gnu.org/licenses/agpl-3.0.html
 
-# ©️ Codrago, 2024-2025
-# This file is a part of Skyline Userbot
-# 🌐 https://github.com/coddrago/Skyline
-# You can redistribute it and/or modify it under the terms of the GNU AGPLv3
-# 🔑 https://www.gnu.org/licenses/agpl-3.0.html
 
 import ast
 import contextlib
@@ -22,10 +12,6 @@ from skylinetl.extensions import html
 from .. import loader, translations, utils
 from ..inline.types import InlineCall
 
-# Everywhere in this module, we use the following naming convention:
-# `obj_type` of non-core module = False
-# `obj_type` of core module = True
-# `obj_type` of library = "library"
 
 
 ROW_SIZE = 3

@@ -1,14 +1,4 @@
-# ©️ Dan Gazizullin, 2021-2023
-# This file is a part of Hikka Userbot
-# 🌐 https://github.com/hikariatama/Hikka
-# You can redistribute it and/or modify it under the terms of the GNU AGPLv3
-# 🔑 https://www.gnu.org/licenses/agpl-3.0.html
 
-# ©️ Codrago, 2024-2025
-# This file is a part of Skyline Userbot
-# 🌐 https://github.com/coddrago/Skyline
-# You can redistribute it and/or modify it under the terms of the GNU AGPLv3
-# 🔑 https://www.gnu.org/licenses/agpl-3.0.html
 
 
 import aiohttp
@@ -299,7 +289,6 @@ class UpdaterMod(loader.Module):
 
         self.set("restart_ts", time.time())
 
-        # await self._db.remote_force_save()
 
         with contextlib.suppress(Exception):
             await main.skyline.web.stop()
@@ -308,8 +297,6 @@ class UpdaterMod(loader.Module):
         handler.setLevel(logging.CRITICAL)
 
         for client in self.allclients:
-            # Terminate main loop of all running clients
-            # Won't work if not all clients are ready
             if client is not message.client:
                 await client.disconnect()
 
@@ -343,7 +330,6 @@ class UpdaterMod(loader.Module):
 
     @staticmethod
     def req_common():
-        # Now we have downloaded new code, install requirements
         logger.debug("Installing new requirements...")
         try:
             subprocess.run(
@@ -411,7 +397,6 @@ class UpdaterMod(loader.Module):
         msg_obj: typing.Union[InlineCall, Message],
         hard: bool = False,
     ):
-        # We don't really care about asyncio at this point, as we are shutting down
         if hard:
             os.system(f"cd {utils.get_base_dir()} && cd .. && git reset --hard HEAD")
 

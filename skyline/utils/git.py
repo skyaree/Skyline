@@ -1,8 +1,3 @@
-# ©️ Codrago, 2024-2025
-# This file is a part of Skyline Userbot
-# 🌐 https://github.com/coddrago/Skyline
-# You can redistribute it and/or modify it under the terms of the GNU AGPLv3
-# 🔑 https://www.gnu.org/licenses/agpl-3.0.html
 
 import logging
 import typing
@@ -13,7 +8,6 @@ import skylinetl
 parser = skylinetl.utils.sanitize_parse_mode("html")
 logger = logging.getLogger(__name__)
 
-# GeekTG Compatibility
 def get_git_info() -> typing.Tuple[str, str]:
     """
     Get git info

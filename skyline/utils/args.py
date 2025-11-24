@@ -1,8 +1,3 @@
-# ©️ Codrago, 2024-2025
-# This file is a part of Skyline Userbot
-# 🌐 https://github.com/coddrago/Skyline
-# You can redistribute it and/or modify it under the terms of the GNU AGPLv3
-# 🔑 https://www.gnu.org/licenses/agpl-3.0.html
 
 import inspect
 import logging
@@ -41,7 +36,6 @@ def get_kwargs() -> typing.Dict[str, typing.Any]:
     Get kwargs of function, in which is called
     :return: kwargs
     """
-    # https://stackoverflow.com/a/65927265/19170642
     keys, _, _, values = inspect.getargvalues(inspect.currentframe().f_back)
     return {key: values[key] for key in keys if key != "self"}
 

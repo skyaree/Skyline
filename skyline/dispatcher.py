@@ -1,32 +1,10 @@
 """Processes incoming events and dispatches them to appropriate handlers"""
 
-#    Friendly Telegram (telegram userbot)
-#    Copyright (C) 2018-2022 The Authors
 
-#    This program is free software: you can redistribute it and/or modify
-#    it under the terms of the GNU Affero General Public License as published by
-#    the Free Software Foundation, either version 3 of the License, or
-#    (at your option) any later version.
 
-#    This program is distributed in the hope that it will be useful,
-#    but WITHOUT ANY WARRANTY; without even the implied warranty of
-#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#    GNU Affero General Public License for more details.
 
-#    You should have received a copy of the GNU Affero General Public License
-#    along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-# ©️ Dan Gazizullin, 2021-2023
-# This file is a part of Hikka Userbot
-# 🌐 https://github.com/hikariatama/Hikka
-# You can redistribute it and/or modify it under the terms of the GNU AGPLv3
-# 🔑 https://www.gnu.org/licenses/agpl-3.0.html
 
-# ©️ Codrago, 2024-2025
-# This file is a part of Skyline Userbot
-# 🌐 https://github.com/coddrago/Skyline
-# You can redistribute it and/or modify it under the terms of the GNU AGPLv3
-# 🔑 https://www.gnu.org/licenses/agpl-3.0.html
 
 import asyncio
 import collections
@@ -51,7 +29,6 @@ from .tl_cache import CustomTelegramClient
 
 logger = logging.getLogger(__name__)
 
-# Keys for layout switch
 ru_keys = 'ёйцукенгшщзхъфывапролджэячсмитьбю.Ё"№;%:?ЙЦУКЕНГШЩЗХЪФЫВАПРОЛДЖЭ/ЯЧСМИТЬБЮ,'
 en_keys = "`qwertyuiop[]asdfghjkl;'zxcvbnm,./~@#$%^&QWERTYUIOP{}ASDFGHJKL:\"|ZXCVBNM<>?"
 ALL_TAGS = [
@@ -193,7 +170,6 @@ class CommandDispatcher:
         return ret
 
     def _handle_grep(self, message: Message) -> Message:
-        # Allow escaping grep with double stick
         if "||grep" in message.text or "|| grep" in message.text:
             message.raw_text = re.sub(r"\|\| ?grep", "| grep", message.raw_text)
             message.text = re.sub(r"\|\| ?grep", "| grep", message.text)
@@ -310,7 +286,6 @@ class CommandDispatcher:
                 and any(s != str.translate(prefix, change) for s in message.message)
             )
         ):
-            # Allow escaping commands using .'s
             if not watcher:
                 await message.edit(
                     message.message[len(prefix):],
@@ -344,12 +319,6 @@ class CommandDispatcher:
         whitelist_chats = self._db.get(main.__name__, "whitelist_chats", [])
         whitelist_modules = self._db.get(main.__name__, "whitelist_modules", [])
 
-        # ⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️
-        # It's not recommended to remove the security check below (external_bl)
-        # If you attempt to bypass this protection, you will be banned from the chat
-        # The protection from using userbots is multi-layer and this is one of the layers
-        # If you bypass it, the next (external) layer will trigger and you will be banned
-        # ⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️
 
         if (
             (chat_id := utils.get_chat_id(message)) in self._external_bl
@@ -645,12 +614,6 @@ class CommandDispatcher:
         whitelist_chats = self._db.get(main.__name__, "whitelist_chats", [])
         whitelist_modules = self._db.get(main.__name__, "whitelist_modules", [])
 
-        # ⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️
-        # It's not recommended to remove the security check below (external_bl)
-        # If you attempt to bypass this protection, you will be banned from the chat
-        # The protection from using userbots is multi-layer and this is one of the layers
-        # If you bypass it, the next (external) layer will trigger and you will be banned
-        # ⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️
 
         if (
             (chat_id := utils.get_chat_id(message)) in self._external_bl
@@ -687,8 +650,6 @@ class CommandDispatcher:
             ):
                 continue
 
-            # Avoid weird AttributeErrors in weird dochub modules by settings placeholder
-            # of attributes
             for placeholder in {"text", "raw_text", "out"}:
                 try:
                     if not hasattr(message, placeholder):
@@ -696,8 +657,6 @@ class CommandDispatcher:
                 except UnicodeDecodeError:
                     pass
 
-            # Run watcher via ensure_future so in case user has a lot
-            # of watchers with long actions, they can run simultaneously
             asyncio.ensure_future(
                 self.future_dispatcher(
                     func,
@@ -713,8 +672,6 @@ class CommandDispatcher:
         exception_handler: callable,
         *args,
     ):
-        # Will be used to determine, which client caused logging messages
-        # parsed via inspect.stack()
         _skyline_client_id_logging_tag = copy.copy(self.client.tg_id)  # noqa: F841
         try:
             await func(message)
