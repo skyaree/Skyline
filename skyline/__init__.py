@@ -7,18 +7,19 @@
 # 🔑 https://www.gnu.org/licenses/agpl-3.0.html
 
 # ©️ Codrago, 2024-2025
-# This file is a part of Skyline Userbot
+# This file is a part of Heroku Userbot
 # 🌐 https://github.com/coddrago/Skyline
 # You can redistribute it and/or modify it under the terms of the GNU AGPLv3
 # 🔑 https://www.gnu.org/licenses/agpl-3.0.html
 
 # Do not delete this file, it will cause errors.
 
-__author__ = "Dan Gazizullin"
-__ForkAuthor__ = "Codrago"
+__author__ = "hikariatama"
+__ForkAuthor__ = "Skyaree"
 __contact__ = "me@hikariatama.ru"
 __copyright__ = "Copyright 2022, Dan Gazizullin"
 __credits__ = ["LonamiWebs", "penn5"]
 __license__ = "AGPLv3"
 __maintainer__ = "developer"
 __status__ = "Production"
+
