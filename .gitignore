@@ -165,7 +165,7 @@ config.json
 *.avi
 
 # Heroku-specific rules
-.heroku/
+# .heroku/
 .apt/
 .profile.d/
 vendor/
